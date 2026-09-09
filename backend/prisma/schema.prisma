@@ -1,0 +1,318 @@
+// pact:ed databasschema
+//
+// Designprinciper:
+// 1. Multi-tenancy: alla rader som rör kunddata har customerId
+// 2. Transient relay: PendingSignature raderas efter leverans, endast
+//    anonymiserad SignatureEvent behålls för fakturering
+// 3. Soft-delete för dokument; hard-delete för signaturer
+// 4. Audit-trail på admin-handlingar (för senare användning)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============== Customer (företaget) ==============
+model Customer {
+  id              String   @id @default(cuid())
+  name            String
+  orgnr           String   @unique
+  contactEmail    String
+  billingAddress  String?
+  postalCode      String?
+  city            String?
+  country         String   @default("SE")
+
+  // Företagsbranding på dokumenten
+  logoUrl         String?
+  brandColor      String?
+
+  // Status
+  status          CustomerStatus @default(ACTIVE)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  users           User[]
+  subscription    Subscription?
+  deliveryConfig  DeliveryConfig?
+  documents       Document[]
+  signatureEvents SignatureEvent[]
+  pendingSignatures PendingSignature[]
+  auditLogs       AuditLog[]
+
+  @@index([orgnr])
+  @@index([status])
+}
+
+enum CustomerStatus {
+  ACTIVE
+  SUSPENDED   // Pga utebliven betalning
+  CANCELED    // Användare har sagt upp
+  DELETED     // Tombstoned, schemalagd radering
+}
+
+// ============== User (administratörer hos kunden) ==============
+model User {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  email         String   @unique
+  name          String
+  role          UserRole @default(ADMIN)
+
+  emailVerifiedAt DateTime?
+  lastLoginAt   DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  magicLinks    MagicLink[]
+  auditLogs     AuditLog[]
+
+  @@index([customerId])
+  @@index([email])
+}
+
+enum UserRole {
+  OWNER    // Kan hantera fakturering + ta bort kontot
+  ADMIN    // Kan skapa dokument och se signaturer
+  VIEWER   // Kan bara se historik
+}
+
+// ============== Magic Link auth ==============
+model MagicLink {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash   String   @unique  // SHA-256 av token, aldrig själva token
+  expiresAt   DateTime
+  consumedAt  DateTime?
+
+  // För säkerhet — länken är giltig endast från samma IP-block
+  requestIp   String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ============== Subscription (Stripe-koppling) ==============
+model Subscription {
+  id                  String   @id @default(cuid())
+  customerId          String   @unique
+  customer            Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  stripeCustomerId    String   @unique
+  stripeSubscriptionId String  @unique
+
+  plan                Plan
+  status              SubscriptionStatus
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  trialEndsAt         DateTime?
+  canceledAt          DateTime?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([stripeCustomerId])
+  @@index([status])
+}
+
+enum Plan {
+  FREE     // 0 kr/år — max 10 signaturer/år
+  SMALL    // 299 kr/år — max 500 signaturer/år
+  MEDIUM   // 699 kr/år — max 2 000 signaturer/år
+  LARGE    // 999 kr/år — max 5 000 signaturer/år
+  ENTERPRISE // Custom pris, 5 000+
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+// ============== Stripe webhook idempotency ==============
+model WebhookEvent {
+  id         String   @id @default(cuid())
+  stripeId   String   @unique
+  type       String
+  receivedAt DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([stripeId])
+}
+
+// ============== DeliveryConfig (var ska signerade dokument levereras) ==============
+model DeliveryConfig {
+  id            String   @id @default(cuid())
+  customerId    String   @unique
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  method        DeliveryMethod
+  // Krypterad JSON-blob med method-specifik konfig
+  // (API-nycklar, e-post-adresser m.m.)
+  configEncrypted Bytes
+
+  // För enklare e-postleverans
+  emailRecipient String?
+
+  isActive      Boolean  @default(true)
+  lastTestedAt  DateTime?
+  lastTestResult String?  // "success" eller felmeddelande
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum DeliveryMethod {
+  EMAIL         // Skicka PDF som bilaga till en mejladress
+  CATALYSTONE   // Direktintegration via API
+  VISMA_LON     // Roadmap
+  HOGIA         // Roadmap
+  FORTNOX       // Roadmap
+  PERSONALKOLLEN // Roadmap
+  SFTP          // Generisk filöverföring
+  WEBHOOK       // Custom HTTP-endpoint hos kunden
+}
+
+// ============== Document (dokumentmall som kan signeras) ==============
+model Document {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  title         String
+  description   String?  @db.Text
+  type          String   // T.ex. "Utlämning av utrustning"
+  templateKey   String?  // Om skapad från en mall, vilken
+  createdByUserId String?
+
+  // QR-kod-data
+  qrToken       String   @unique  // Publik del som finns i QR-koden
+  qrImageUrl    String?  // Cachad QR PNG i S3
+
+  status        DocumentStatus @default(ACTIVE)
+  archivedAt    DateTime?
+  deletedAt     DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  signatureEvents SignatureEvent[]
+  pendingSignatures PendingSignature[]
+
+  @@index([customerId, status])
+  @@index([qrToken])
+}
+
+enum DocumentStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+// ============== PendingSignature (TRANSIENT — raderas efter leverans) ==============
+// Denna tabell håller PII medan signaturen bearbetas och levereras
+// Automatisk radering via cron-job efter leveransbekräftelse
+// Maximal lagringstid: 48 timmar
+model PendingSignature {
+  id              String   @id @default(cuid())
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  documentId      String
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  // PII — raderas vid leverans
+  signerName      String
+  signerEmpno     String
+  signerSignatureUrl String  // S3 URL till bilden, raderas vid leverans
+  signedPdfUrl    String?     // S3 URL till färdig PDF, raderas vid leverans
+
+  // Metadata för audit (anonymiseras till SignatureEvent vid radering)
+  signedAt        DateTime
+  ipHash          String      // Hashad IP (för missbruksdetektering, inte PII)
+  userAgent       String?
+
+  // Leverans
+  deliveryStatus  DeliveryStatus @default(PENDING)
+  deliveryAttempts Int    @default(0)
+  lastDeliveryError String?
+  deliveredAt     DateTime?
+
+  expiresAt       DateTime    // 48h efter signering, sedan automatisk radering
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([customerId, deliveryStatus])
+  @@index([expiresAt])
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERING
+  DELIVERED
+  FAILED
+}
+
+// ============== SignatureEvent (PERSISTENT — anonym metadata) ==============
+// Detta är ENDA spåret av en signatur som finns kvar långsiktigt
+// Innehåller INGEN PII — bara aggregerad data för fakturering och statistik
+model SignatureEvent {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  documentId    String
+  document      Document @relation(fields: [documentId], references: [id])
+
+  signedAt      DateTime
+  deliveredAt   DateTime?
+  deliveryMethod DeliveryMethod
+  deliverySucceeded Boolean
+
+  // För fakturering
+  billingPeriod String   // T.ex. "2026-05"
+
+  createdAt     DateTime @default(now())
+
+  @@index([customerId, billingPeriod])
+  @@index([documentId])
+}
+
+// ============== AuditLog (för revision och säkerhet) ==============
+model AuditLog {
+  id          String   @id @default(cuid())
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action      String   // T.ex. "document.created", "user.invited", "subscription.changed"
+  resource    String?  // T.ex. "Document:abc123"
+  ipHash      String?
+  userAgent   String?
+  metadata    Json?    // Strukturerat data om händelsen (INGEN PII)
+
+  createdAt   DateTime @default(now())
+
+  @@index([customerId, createdAt])
+  @@index([action])
+}

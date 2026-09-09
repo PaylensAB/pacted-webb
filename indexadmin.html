@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pact:ed · Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"
+          onerror="this.onerror=null;this.src='https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
+          onerror="this.onerror=null;this.src='https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'"></script>
+  <style>
+    .qr-canvas img, .qr-canvas canvas { margin: 0 auto; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+  <!-- Top bar -->
+  <header class="bg-white border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-lg">p</div>
+      <div class="flex-1">
+        <div class="font-semibold text-slate-900">pact:ed <span class="text-slate-400 font-normal">· Admin</span></div>
+        <div class="text-xs text-slate-500">Snabb signering på arbetsplatsen</div>
+      </div>
+      <div class="hidden sm:block text-right">
+        <div class="text-xs text-slate-500">Ditt paket</div>
+        <div class="text-sm font-semibold text-teal-700" id="plan-label">Liten · 299 kr/år · 500 sign/år</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- Stats row -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="text-xs text-slate-500">Aktiva dokument</div>
+        <div class="text-2xl font-semibold text-slate-900" id="stat-docs">0</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="text-xs text-slate-500">Signaturer totalt</div>
+        <div class="text-2xl font-semibold text-slate-900" id="stat-sigs">0</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="text-xs text-slate-500">Senaste signering</div>
+        <div class="text-sm font-medium text-slate-900" id="stat-last">—</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="text-xs text-slate-500">Levereras till</div>
+        <div class="text-sm font-medium text-slate-900">CatalystOne</div>
+      </div>
+    </section>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+
+      <!-- Create new document -->
+      <section class="bg-white rounded-2xl border border-slate-200 p-5">
+        <h2 class="font-semibold text-slate-900 mb-1">Skapa nytt dokument</h2>
+        <p class="text-sm text-slate-500 mb-4">Välj en färdig mall — titel, typ och beskrivning fylls i automatiskt. Du kan justera om du behöver.</p>
+
+        <div class="space-y-3">
+          <label class="block">
+            <span class="text-sm text-slate-700 font-medium">Mall</span>
+            <select id="new-template"
+              class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none bg-teal-50">
+              <option value="">Välj mall…</option>
+              <optgroup label="Utlämning av utrustning">
+                <option value="uniform">Arbetskläder / uniform mottagen</option>
+                <option value="it_equipment">IT-utrustning mottagen (dator, telefon)</option>
+                <option value="phone_only">Mobiltelefon mottagen</option>
+                <option value="keys_card">Nyckel / passerkort mottaget</option>
+                <option value="ppe">Personlig skyddsutrustning mottagen</option>
+                <option value="vehicle">Tjänstebil / firmabil mottagen</option>
+                <option value="tools">Verktyg och materiel mottaget</option>
+              </optgroup>
+              <optgroup label="Policybekräftelser">
+                <option value="it_policy">IT-säkerhetspolicy genomgången</option>
+                <option value="confidentiality">Sekretesspolicy genomgången</option>
+                <option value="alcohol_drugs">Alkohol- och drogpolicy genomgången</option>
+                <option value="gdpr">GDPR / dataskyddspolicy</option>
+                <option value="code_of_conduct">Uppförandekod (Code of Conduct)</option>
+                <option value="whistleblower">Visselblåsarpolicy</option>
+              </optgroup>
+              <optgroup label="Mottagningsbevis och genomgångar">
+                <option value="handbook">Personalhandbok mottagen</option>
+                <option value="contract">Anställningsavtal mottaget</option>
+                <option value="fire_safety">Brandsäkerhetsgenomgång</option>
+                <option value="first_aid">Genomgång — första hjälpen</option>
+                <option value="onboarding">Introduktion / onboarding genomförd</option>
+              </optgroup>
+              <optgroup label="Övrigt">
+                <option value="drivers_license">Körkortskontroll</option>
+                <option value="time_report">Bekräftelse av tidrapport</option>
+                <option value="custom">Tom mall (skriv eget)</option>
+              </optgroup>
+            </select>
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-slate-700">Titel</span>
+            <input id="new-title" type="text" placeholder="Välj en mall ovan eller skriv egen titel"
+              class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none" />
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-slate-700">Typ</span>
+            <select id="new-type"
+              class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none">
+              <option>Utlämning av utrustning</option>
+              <option>Policybekräftelse</option>
+              <option>Kvittens</option>
+              <option>Mottagningsbevis</option>
+              <option>Övrigt</option>
+            </select>
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-slate-700">Beskrivning</span>
+            <textarea id="new-desc" rows="5" placeholder="Välj en mall ovan, eller skriv eget innehåll här."
+              class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none"></textarea>
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-slate-700">Bas-URL för QR-kod</span>
+            <input id="base-url" type="text"
+              class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none" />
+            <span class="text-xs text-slate-500">Ändra till t.ex. <code>https://pacted.se/sign.html</code> när du driftsätter.</span>
+          </label>
+
+          <button id="create-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+            Skapa dokument & QR-kod
+          </button>
+        </div>
+      </section>
+
+      <!-- Latest QR -->
+      <section id="latest-qr" class="hidden bg-white rounded-2xl border border-slate-200 p-5">
+        <h2 class="font-semibold text-slate-900 mb-1">QR-kod redo att skrivas ut</h2>
+        <p class="text-sm text-slate-500 mb-4" id="latest-qr-title">—</p>
+
+        <div class="qr-canvas bg-white p-4 rounded-xl border border-slate-200 mb-3" id="qr-target"></div>
+
+        <div class="text-xs text-slate-500 mb-1">Signerings-URL</div>
+        <div class="flex gap-2 mb-4">
+          <input id="latest-url" readonly class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono bg-slate-50" />
+          <button id="copy-url" class="px-3 py-2 text-sm font-medium text-teal-700 border border-teal-200 rounded-lg hover:bg-teal-50">Kopiera</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button id="open-sign" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 rounded-lg">Öppna sida</button>
+          <button id="download-qr" class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 rounded-lg">Ladda ner QR (PNG)</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Documents list -->
+    <section class="bg-white rounded-2xl border border-slate-200">
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h2 class="font-semibold text-slate-900">Dina dokument</h2>
+          <p class="text-sm text-slate-500">Klicka på ett dokument för att se signaturer.</p>
+        </div>
+        <button id="reset-demo" class="text-xs text-slate-400 hover:text-red-600">Rensa demo-data</button>
+      </div>
+      <div id="docs-list" class="divide-y divide-slate-100"></div>
+      <div id="docs-empty" class="hidden p-8 text-center text-sm text-slate-500">
+        Du har inga dokument än. Skapa ditt första ovan.
+      </div>
+    </section>
+
+    <!-- Pricing footer -->
+    <section class="bg-white rounded-2xl border border-slate-200 p-5">
+      <h2 class="font-semibold text-slate-900 mb-3">Prissättning</h2>
+      <div class="grid sm:grid-cols-4 gap-3">
+        <div class="rounded-xl border-2 border-teal-600 p-3 bg-teal-50">
+          <div class="text-xs text-teal-700 font-semibold uppercase">Aktuellt paket</div>
+          <div class="text-sm font-semibold text-slate-900 mt-1">Liten · 500 sign/år</div>
+          <div class="text-2xl font-bold text-slate-900">299<span class="text-sm font-normal text-slate-500"> kr/år</span></div>
+        </div>
+        <div class="rounded-xl border border-slate-200 p-3">
+          <div class="text-xs text-slate-500 font-semibold uppercase">Mellan</div>
+          <div class="text-sm font-semibold text-slate-900 mt-1">2 000 sign/år</div>
+          <div class="text-2xl font-bold text-slate-900">699<span class="text-sm font-normal text-slate-500"> kr/år</span></div>
+        </div>
+        <div class="rounded-xl border border-slate-200 p-3">
+          <div class="text-xs text-slate-500 font-semibold uppercase">Stor</div>
+          <div class="text-sm font-semibold text-slate-900 mt-1">5 000 sign/år</div>
+          <div class="text-2xl font-bold text-slate-900">999<span class="text-sm font-normal text-slate-500"> kr/år</span></div>
+        </div>
+        <div class="rounded-xl border border-slate-200 p-3">
+          <div class="text-xs text-slate-500 font-semibold uppercase">Enterprise</div>
+          <div class="text-sm font-semibold text-slate-900 mt-1">5 000+ sign/år</div>
+          <div class="text-2xl font-bold text-slate-900">Kontakta</div>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-3">Volymtier per kalenderår. Vid kvotöverskridning notiserar vi och uppgraderar mjukt — vi blockerar aldrig en signatur mitt i flödet.</p>
+    </section>
+
+    <p class="text-center text-xs text-slate-400 pt-4 pb-8">Prototyp · data sparas i din webbläsare (localStorage) · ej för produktionsbruk</p>
+  </main>
+
+<script>
+// ============== Storage ==============
+const STORAGE_KEY = 'pacted_documents_v1';
+function loadDocs() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveDocs(docs) { localStorage.setItem(STORAGE_KEY, JSON.stringify(docs)); }
+
+// ============== Helpers ==============
+function uid() { return 'doc_' + Math.random().toString(36).slice(2, 10); }
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('sv-SE', { dateStyle: 'medium', timeStyle: 'short' });
+}
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ============== Document templates ==============
+const TEMPLATES = {
+  uniform: {
+    title: 'Kvittens — arbetskläder',
+    type: 'Utlämning av utrustning',
+    description: 'Jag bekräftar att jag har mottagit arbetskläder från min arbetsgivare. Plaggen är min personliga utrustning under anställningen och ska återlämnas vid avslutad anställning eller på begäran av arbetsgivaren.\n\nMottagna plagg specificeras separat (exempelvis 2 jackor, 2 byxor, 1 keps, 1 par skor).',
+  },
+  it_equipment: {
+    title: 'Kvittens — IT-utrustning',
+    type: 'Utlämning av utrustning',
+    description: 'Jag bekräftar att jag har mottagit IT-utrustning (exempelvis dator, mobiltelefon, headset, dockningsstation) från min arbetsgivare. Utrustningen är arbetsgivarens egendom och ska återlämnas i fungerande skick vid avslutad anställning. Jag förbinder mig att hantera utrustningen varsamt och följa företagets IT-säkerhetspolicy.',
+  },
+  phone_only: {
+    title: 'Kvittens — mobiltelefon',
+    type: 'Utlämning av utrustning',
+    description: 'Jag bekräftar att jag har mottagit mobiltelefon med tillhörande SIM-kort och laddare från min arbetsgivare. Telefonen är arbetsgivarens egendom och ska återlämnas vid avslutad anställning eller på begäran. Jag är medveten om reglerna för privat användning enligt företagets policy.',
+  },
+  keys_card: {
+    title: 'Kvittens — nyckel och passerkort',
+    type: 'Utlämning av utrustning',
+    description: 'Jag bekräftar att jag har mottagit nyckel och/eller passerkort till arbetsplatsen. Jag förbinder mig att förvara dessa säkert, inte överlåta dem till annan person, samt omedelbart anmäla förlust till arbetsgivaren.',
+  },
+  ppe: {
+    title: 'Kvittens — personlig skyddsutrustning',
+    type: 'Utlämning av utrustning',
+    description: 'Jag bekräftar att jag har mottagit personlig skyddsutrustning (PSU/PPE) från min arbetsgivare och att jag har fått instruktioner om hur den ska användas och underhållas. Jag förbinder mig att använda utrustningen i de arbetsmoment den är avsedd för.',
+  },
+  vehicle: {
+    title: 'Kvittens — tjänstebil',
+    type: 'Utlämning av utrustning',
+    description: 'Jag bekräftar att jag har mottagit tjänstebilen i fungerande skick. Jag har giltigt körkort av rätt klass, känner till företagets bilpolicy, och förbinder mig att följa trafikregler och rapportera skador omedelbart.',
+  },
+  tools: {
+    title: 'Kvittens — verktyg och materiel',
+    type: 'Utlämning av utrustning',
+    description: 'Jag bekräftar att jag har mottagit verktyg och materiel från min arbetsgivare. Utrustningen är arbetsgivarens egendom och ska återlämnas i samma skick vid avslutad anställning eller på begäran.',
+  },
+
+  it_policy: {
+    title: 'Mottagen — IT-säkerhetspolicy',
+    type: 'Policybekräftelse',
+    description: 'Jag bekräftar att jag har läst och förstått företagets IT-säkerhetspolicy. Jag är medveten om mina skyldigheter gällande hantering av lösenord, klassificering av information, hantering av e-post och externa enheter samt rapportering av incidenter.',
+  },
+  confidentiality: {
+    title: 'Mottagen — sekretesspolicy',
+    type: 'Policybekräftelse',
+    description: 'Jag bekräftar att jag har tagit del av företagets sekretesspolicy och förstår min skyldighet att behandla företagets, kunders och kollegors information konfidentiellt. Sekretessen gäller även efter avslutad anställning.',
+  },
+  alcohol_drugs: {
+    title: 'Mottagen — alkohol- och drogpolicy',
+    type: 'Policybekräftelse',
+    description: 'Jag bekräftar att jag har tagit del av företagets policy gällande alkohol och droger på arbetsplatsen. Jag är medveten om reglerna och konsekvenserna vid överträdelse, samt att slumpvisa kontroller kan förekomma där så är reglerat.',
+  },
+  gdpr: {
+    title: 'Mottagen — GDPR och dataskyddspolicy',
+    type: 'Policybekräftelse',
+    description: 'Jag bekräftar att jag har tagit del av företagets GDPR- och dataskyddspolicy. Jag förstår vilka skyldigheter jag har gällande hantering av personuppgifter, rutiner vid incidenter och vilka personuppgifter företaget behandlar om mig som anställd.',
+  },
+  code_of_conduct: {
+    title: 'Mottagen — uppförandekod',
+    type: 'Policybekräftelse',
+    description: 'Jag bekräftar att jag har tagit del av företagets uppförandekod (Code of Conduct). Jag förstår innebörden och förbinder mig att efterleva dess principer i mitt dagliga arbete och i mina kontakter med kollegor, kunder och leverantörer.',
+  },
+  whistleblower: {
+    title: 'Mottagen — visselblåsarpolicy',
+    type: 'Policybekräftelse',
+    description: 'Jag bekräftar att jag har informerats om företagets visselblåsarrutin och vart jag kan vända mig om jag misstänker oegentligheter. Jag är medveten om att rapportering kan ske anonymt och att jag är skyddad mot repressalier enligt visselblåsarlagen.',
+  },
+
+  handbook: {
+    title: 'Mottagen — personalhandbok',
+    type: 'Mottagningsbevis',
+    description: 'Jag bekräftar att jag har mottagit personalhandboken och tagit del av dess innehåll. Jag är medveten om att handboken innehåller viktig information om mina rättigheter och skyldigheter som anställd, samt om de rutiner som gäller på arbetsplatsen.',
+  },
+  contract: {
+    title: 'Mottagen — kopia av anställningsavtal',
+    type: 'Mottagningsbevis',
+    description: 'Jag bekräftar att jag har mottagit en kopia av mitt anställningsavtal. Detta utgör en kvittens på mottagandet och ersätter inte den ordinarie signeringen av anställningsavtalet.',
+  },
+  fire_safety: {
+    title: 'Genomgång — brandsäkerhet',
+    type: 'Mottagningsbevis',
+    description: 'Jag bekräftar att jag har deltagit i genomgång av brandsäkerhet på arbetsplatsen. Jag känner till nödutgångar, samlingsplats utanför byggnaden, placering av brandsläckare och första hjälpen, samt rutiner vid brand eller utrymning.',
+  },
+  first_aid: {
+    title: 'Genomgång — första hjälpen',
+    type: 'Mottagningsbevis',
+    description: 'Jag bekräftar att jag har deltagit i genomgång av första hjälpen på arbetsplatsen. Jag känner till vart första hjälpen-utrustning förvaras, vilka kollegor som är utbildade i HLR och hur jag larmar 112.',
+  },
+  onboarding: {
+    title: 'Introduktion / onboarding genomförd',
+    type: 'Mottagningsbevis',
+    description: 'Jag bekräftar att jag har genomfört företagets introduktionsprogram (onboarding). Jag har fått presentation av arbetsplatsen, mina arbetsuppgifter, organisationen och de viktigaste rutinerna.',
+  },
+
+  drivers_license: {
+    title: 'Kontroll — giltigt körkort',
+    type: 'Övrigt',
+    description: 'Jag bekräftar att jag innehar giltigt körkort av rätt klass för de fordon jag använder i tjänsten, och att körkortet inte är återkallat eller har annan begränsning. Jag förbinder mig att meddela arbetsgivaren omedelbart vid eventuell förlust eller återkallelse av körkortet.',
+  },
+  time_report: {
+    title: 'Bekräftelse av tidrapport',
+    type: 'Övrigt',
+    description: 'Jag bekräftar att den tidrapport som ligger till grund för min lön är korrekt avseende antalet arbetade timmar, övertid samt eventuell frånvaro under perioden.',
+  },
+  custom: {
+    title: '',
+    type: 'Övrigt',
+    description: '',
+  },
+};
+
+document.getElementById('new-template').addEventListener('change', (e) => {
+  const t = TEMPLATES[e.target.value];
+  if (!t) return;
+  document.getElementById('new-title').value = t.title;
+  document.getElementById('new-type').value = t.type;
+  document.getElementById('new-desc').value = t.description;
+  // Brief visual feedback on the title field
+  const titleEl = document.getElementById('new-title');
+  titleEl.classList.add('ring-2', 'ring-teal-100');
+  setTimeout(() => titleEl.classList.remove('ring-2', 'ring-teal-100'), 800);
+});
+
+// ============== Base URL handling ==============
+// Default base URL points to local sign.html so it works out of the box.
+const baseUrlInput = document.getElementById('base-url');
+const defaultBase = new URL('sign.html', location.href).href;
+baseUrlInput.value = localStorage.getItem('pacted_base_url') || defaultBase;
+baseUrlInput.addEventListener('change', () => {
+  localStorage.setItem('pacted_base_url', baseUrlInput.value);
+});
+
+function buildSignUrl(id) {
+  const base = baseUrlInput.value || defaultBase;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}id=${encodeURIComponent(id)}`;
+}
+
+// ============== Render documents list ==============
+function renderList() {
+  const docs = loadDocs().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  const list = document.getElementById('docs-list');
+  const empty = document.getElementById('docs-empty');
+
+  // Stats
+  document.getElementById('stat-docs').textContent = docs.length;
+  const allSigs = docs.flatMap(d => d.signatures || []);
+  document.getElementById('stat-sigs').textContent = allSigs.length;
+  const last = allSigs.sort((a, b) => (b.signedAt || '').localeCompare(a.signedAt || ''))[0];
+  document.getElementById('stat-last').textContent = last ? fmt(last.signedAt) : '—';
+
+  if (docs.length === 0) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  list.innerHTML = docs.map(d => {
+    const sigs = d.signatures || [];
+    const url = buildSignUrl(d.id);
+    return `
+      <div class="p-5 hover:bg-slate-50 transition">
+        <div class="flex items-start gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="text-xs uppercase tracking-wide text-teal-700 font-semibold mb-1">${escapeHtml(d.type || 'Dokument')}</div>
+            <h3 class="font-semibold text-slate-900">${escapeHtml(d.title || '(utan titel)')}</h3>
+            ${d.description ? `<p class="text-sm text-slate-500 mt-1 line-clamp-2">${escapeHtml(d.description)}</p>` : ''}
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
+              <span>Skapat ${fmt(d.createdAt)}</span>
+              <span>·</span>
+              <span class="font-medium ${sigs.length > 0 ? 'text-teal-700' : 'text-slate-500'}">${sigs.length} signatur${sigs.length === 1 ? '' : 'er'}</span>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2 shrink-0">
+            <button data-action="show-qr" data-id="${d.id}" class="text-xs font-medium text-teal-700 border border-teal-200 rounded-lg px-3 py-1.5 hover:bg-teal-50">Visa QR</button>
+            <a href="${escapeHtml(url)}" target="_blank" class="text-xs font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 text-center">Öppna sida</a>
+            <button data-action="delete" data-id="${d.id}" class="text-xs text-slate-400 hover:text-red-600">Ta bort</button>
+          </div>
+        </div>
+
+        ${sigs.length > 0 ? `
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm font-medium text-slate-700 select-none">Visa signaturer (${sigs.length})</summary>
+            <div class="mt-3 overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-xs text-slate-500 uppercase">
+                  <tr>
+                    <th class="text-left font-medium pb-2">Namn</th>
+                    <th class="text-left font-medium pb-2">Anst.nr</th>
+                    <th class="text-left font-medium pb-2">Tid</th>
+                    <th class="text-left font-medium pb-2">Signatur</th>
+                    <th class="text-right font-medium pb-2"></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${sigs.map(s => `
+                    <tr>
+                      <td class="py-2 font-medium text-slate-900">${escapeHtml(s.name)}</td>
+                      <td class="py-2 text-slate-700">${escapeHtml(s.empno)}</td>
+                      <td class="py-2 text-slate-500 whitespace-nowrap">${fmt(s.signedAt)}</td>
+                      <td class="py-2"><img src="${s.signatureDataUrl}" alt="signatur" class="h-8 inline-block" /></td>
+                      <td class="py-2 text-right">
+                        <button data-action="download-pdf" data-doc="${d.id}" data-sig="${s.id}" class="text-xs font-medium text-teal-700 hover:underline">Ladda ner PDF</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ============== Create document ==============
+document.getElementById('create-btn').addEventListener('click', () => {
+  const title = document.getElementById('new-title').value.trim();
+  const type = document.getElementById('new-type').value;
+  const desc = document.getElementById('new-desc').value.trim();
+
+  if (!title) { alert('Fyll i en titel.'); return; }
+
+  const doc = {
+    id: uid(),
+    title, type, description: desc,
+    createdAt: new Date().toISOString(),
+    createdBy: 'Arbetsgivare (demo)',
+    signatures: [],
+  };
+  const docs = loadDocs();
+  docs.push(doc);
+  saveDocs(docs);
+
+  showLatestQr(doc);
+  renderList();
+
+  // Reset inputs
+  document.getElementById('new-title').value = '';
+  document.getElementById('new-desc').value = '';
+  document.getElementById('new-template').value = '';
+});
+
+// ============== QR display ==============
+function showLatestQr(doc) {
+  const url = buildSignUrl(doc.id);
+  document.getElementById('latest-qr').classList.remove('hidden');
+  document.getElementById('latest-qr-title').textContent = doc.title;
+  document.getElementById('latest-url').value = url;
+
+  const target = document.getElementById('qr-target');
+  target.innerHTML = '';
+
+  if (typeof QRCode === 'undefined') {
+    target.innerHTML = '<div class="text-sm text-red-600 p-4">QR-biblioteket är inte laddat — ladda om sidan eller kontrollera internetanslutningen.</div>';
+  } else {
+    const canvas = document.createElement('canvas');
+    target.appendChild(canvas);
+    QRCode.toCanvas(canvas, url, {
+      width: 240,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#0f172a', light: '#ffffff' },
+    }, (err) => {
+      if (err) {
+        console.error('QR generation failed:', err);
+        target.innerHTML = '<div class="text-sm text-red-600 p-4">Kunde inte generera QR-kod: ' + escapeHtml(err.message || String(err)) + '</div>';
+      }
+    });
+  }
+
+  document.getElementById('open-sign').onclick = () => window.open(url, '_blank');
+  document.getElementById('copy-url').onclick = async () => {
+    try { await navigator.clipboard.writeText(url); flash('Kopierad'); }
+    catch { document.getElementById('latest-url').select(); }
+  };
+  document.getElementById('download-qr').onclick = () => downloadQrPng(target, doc.title);
+}
+
+function flash(msg) {
+  const el = document.createElement('div');
+  el.className = 'fixed bottom-4 right-4 bg-slate-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg z-50';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+function downloadQrPng(container, title) {
+  // qrcodejs renders both an img and a canvas; prefer canvas for clean export
+  const canvas = container.querySelector('canvas');
+  const img = container.querySelector('img');
+  let dataUrl;
+  if (canvas) {
+    dataUrl = canvas.toDataURL('image/png');
+  } else if (img) {
+    dataUrl = img.src;
+  } else {
+    alert('Kunde inte exportera QR-kod.');
+    return;
+  }
+  const a = document.createElement('a');
+  const safe = String(title || 'qr').replace(/[^\w\-åäöÅÄÖ]+/g, '_').slice(0, 60);
+  a.href = dataUrl;
+  a.download = `qr_${safe}.png`;
+  a.click();
+}
+
+// ============== List actions (event delegation) ==============
+document.getElementById('docs-list').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+
+  if (action === 'show-qr') {
+    const id = btn.dataset.id;
+    const doc = loadDocs().find(d => d.id === id);
+    if (doc) {
+      showLatestQr(doc);
+      document.getElementById('latest-qr').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  if (action === 'delete') {
+    if (!confirm('Ta bort dokumentet och alla dess signaturer?')) return;
+    const id = btn.dataset.id;
+    saveDocs(loadDocs().filter(d => d.id !== id));
+    renderList();
+  }
+
+  if (action === 'download-pdf') {
+    const docs = loadDocs();
+    const doc = docs.find(d => d.id === btn.dataset.doc);
+    const sig = doc && (doc.signatures || []).find(s => s.id === btn.dataset.sig);
+    if (doc && sig) await generateAndDownloadPdf(doc, sig);
+  }
+});
+
+// ============== Reset demo ==============
+document.getElementById('reset-demo').addEventListener('click', () => {
+  if (!confirm('Rensa all demo-data? Detta tar bort alla dokument och signaturer från denna webbläsare.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  // also clear per-doc local sig markers
+  Object.keys(localStorage).filter(k => k.startsWith('pacted_signed_')).forEach(k => localStorage.removeItem(k));
+  document.getElementById('latest-qr').classList.add('hidden');
+  renderList();
+});
+
+// ============== PDF generation (mirror of sign.html) ==============
+async function generateAndDownloadPdf(doc, sig) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595.28, 841.89]);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const margin = 50;
+  let y = 800;
+  const teal = rgb(0.06, 0.46, 0.42);
+  const slate900 = rgb(0.05, 0.09, 0.16);
+  const slate600 = rgb(0.30, 0.36, 0.44);
+  const slate300 = rgb(0.80, 0.83, 0.88);
+
+  page.drawRectangle({ x: 0, y: 820, width: 595.28, height: 22, color: teal });
+  page.drawText('pact:ed  ·  Signerad kvittens', { x: margin, y: 826, size: 11, font: bold, color: rgb(1,1,1) });
+
+  y = 790;
+  page.drawText((doc.type || 'DOKUMENT').toUpperCase(), { x: margin, y, size: 9, font: bold, color: teal });
+
+  y -= 22;
+  drawWrappedText(page, doc.title || '(utan titel)', { x: margin, y, maxWidth: 495, font: bold, size: 20, color: slate900, lineHeight: 24 });
+  y -= linesNeeded(doc.title || '', 495, bold, 20) * 24;
+
+  if (doc.description) {
+    y -= 6;
+    drawWrappedText(page, doc.description, { x: margin, y, maxWidth: 495, font, size: 11, color: slate600, lineHeight: 15 });
+    y -= linesNeeded(doc.description, 495, font, 11) * 15;
+  }
+
+  y -= 14;
+  page.drawLine({ start: { x: margin, y }, end: { x: 545, y }, thickness: 0.5, color: slate300 });
+  y -= 22;
+
+  page.drawText('Signatur', { x: margin, y, size: 11, font: bold, color: slate900 });
+  y -= 18;
+
+  for (const [k, v] of [
+    ['Namn', sig.name],
+    ['Anställningsnummer', sig.empno],
+    ['Signerad', new Date(sig.signedAt).toLocaleString('sv-SE')],
+    ['Signatur-id', sig.id],
+  ]) {
+    page.drawText(k, { x: margin, y, size: 9, font, color: slate600 });
+    page.drawText(String(v || '—'), { x: margin + 130, y, size: 10, font: bold, color: slate900 });
+    y -= 16;
+  }
+
+  y -= 10;
+  page.drawText('Ritad signatur', { x: margin, y, size: 9, font, color: slate600 });
+  y -= 6;
+  const sigPng = await pdfDoc.embedPng(sig.signatureDataUrl);
+  const sigW = 240;
+  const sigH = (sigPng.height / sigPng.width) * sigW;
+  const sigBoxH = Math.max(sigH, 80);
+  const sigBoxY = y - sigBoxH;
+  page.drawRectangle({ x: margin, y: sigBoxY, width: sigW + 10, height: sigBoxH + 6, borderColor: slate300, borderWidth: 0.5 });
+  page.drawImage(sigPng, { x: margin + 5, y: sigBoxY + (sigBoxH - sigH) / 2, width: sigW, height: sigH });
+  y = sigBoxY - 18;
+
+  page.drawLine({ start: { x: margin, y }, end: { x: 545, y }, thickness: 0.5, color: slate300 });
+  y -= 16;
+  page.drawText('Spårbarhet (audit trail)', { x: margin, y, size: 11, font: bold, color: slate900 });
+  y -= 16;
+  for (const [k, v] of [
+    ['Dokument-id', doc.id],
+    ['Skapat av', doc.createdBy || 'Arbetsgivare'],
+    ['Skapat', new Date(doc.createdAt).toLocaleString('sv-SE')],
+    ['Enhet (user agent)', sig.userAgent || ''],
+    ['Språk', sig.language || ''],
+    ['Bevistyp', 'Enkel elektronisk signatur (SES) enligt eIDAS art. 3(10)'],
+  ]) {
+    page.drawText(k, { x: margin, y, size: 9, font, color: slate600 });
+    drawWrappedText(page, String(v || '—'), { x: margin + 130, y, maxWidth: 365, font, size: 9, color: slate900, lineHeight: 12 });
+    const lines = linesNeeded(String(v || ''), 365, font, 9);
+    y -= Math.max(lines * 12, 14);
+  }
+
+  page.drawLine({ start: { x: margin, y: 52 }, end: { x: 545, y: 52 }, thickness: 0.5, color: slate300 });
+  page.drawText('Genererad av pact:ed  ·  pacted.se  ·  Detta är en signerad kvittens av enklare typ.', {
+    x: margin, y: 36, size: 8, font, color: slate600,
+  });
+
+  const bytes = await pdfDoc.save();
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeTitle = (doc.title || 'kvittens').replace(/[^\w\-åäöÅÄÖ]+/g, '_').slice(0, 60);
+  a.href = url;
+  a.download = `${safeTitle}_${sig.empno}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function wrapLines(text, maxWidth, font, size) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    const width = font.widthOfTextAtSize(test, size);
+    if (width > maxWidth && line) { lines.push(line); line = w; }
+    else { line = test; }
+  }
+  if (line) lines.push(line);
+  return lines.flatMap(l => l.split('\n'));
+}
+function linesNeeded(text, maxWidth, font, size) {
+  return Math.max(1, wrapLines(text, maxWidth, font, size).length);
+}
+function drawWrappedText(page, text, opts) {
+  const lines = wrapLines(text, opts.maxWidth, opts.font, opts.size);
+  let y = opts.y;
+  for (const ln of lines) {
+    page.drawText(ln, { x: opts.x, y, size: opts.size, font: opts.font, color: opts.color });
+    y -= opts.lineHeight;
+  }
+}
+
+// ============== Demo seed (only first run) ==============
+function seedIfEmpty() {
+  if (loadDocs().length > 0) return;
+  saveDocs([{
+    id: uid(),
+    title: 'Kvittens — uniform 2026',
+    type: 'Utlämning av utrustning',
+    description: 'Jag bekräftar att jag har mottagit följande arbetskläder: 2 st jacka, 2 st byxa, 1 st keps. Plaggen är min personliga utrustning och ska återlämnas vid avslutad anställning.',
+    createdAt: new Date().toISOString(),
+    createdBy: 'Arbetsgivare (demo)',
+    signatures: [],
+  }]);
+}
+
+seedIfEmpty();
+renderList();
+
+// Refresh stats when other tab/window writes (e.g., signing page)
+window.addEventListen

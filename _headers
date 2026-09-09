@@ -1,0 +1,13 @@
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://tally.so https://*.tally.so; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://tally.so https://*.tally.so; frame-src https://tally.so https://*.tally.so; base-uri 'self'; form-action 'self' https://tally.so
+
+/*.html
+  Cache-Control: public, max-age=300, must-revalidate
+
+/favicon.svg
+  Cache-Control: public, max-age=86400

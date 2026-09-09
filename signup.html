@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pact:ed — Starta din prenumeration</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+    .font-serif { font-family: 'Fraunces', Georgia, serif; }
+    .card-shadow { box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 8px 24px -8px rgba(15,23,42,0.08); }
+    /* Card input styling to feel like Stripe */
+    .field input::placeholder { color: #94a3b8; }
+    .ring-focus:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13,148,136,0.15); }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+  <!-- Top bar -->
+  <nav class="bg-white border-b border-slate-100">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+      <a href="landing.html" class="flex items-center gap-2 font-semibold">
+        <span class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold">p</span>
+        <span>pact:ed</span>
+      </a>
+      <span class="ml-auto text-sm text-slate-500 hidden sm:block">Behöver du hjälp? <a href="mailto:hej@pacted.se" class="text-teal-700 hover:underline">hej@pacted.se</a></span>
+      <a href="landing.html" class="ml-auto sm:ml-0 text-sm text-slate-500 hover:text-slate-900 sm:hidden">Tillbaka</a>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-4 py-6 md:py-10">
+
+    <!-- Step indicator -->
+    <ol id="steps" class="flex items-center gap-1 mb-6 text-xs">
+      <li class="step-item flex-1 flex items-center gap-2" data-step="1">
+        <div class="step-num w-7 h-7 rounded-full bg-teal-600 text-white flex items-center justify-center font-semibold shrink-0">1</div>
+        <span class="step-label hidden sm:inline font-medium">Konto</span>
+      </li>
+      <li class="flex-1 h-px bg-slate-200"></li>
+      <li class="step-item flex-1 flex items-center gap-2" data-step="2">
+        <div class="step-num w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-semibold shrink-0">2</div>
+        <span class="step-label hidden sm:inline text-slate-500">Företag</span>
+      </li>
+      <li class="flex-1 h-px bg-slate-200"></li>
+      <li class="step-item flex-1 flex items-center gap-2" data-step="3">
+        <div class="step-num w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-semibold shrink-0">3</div>
+        <span class="step-label hidden sm:inline text-slate-500">Plan</span>
+      </li>
+      <li class="flex-1 h-px bg-slate-200"></li>
+      <li class="step-item flex-1 flex items-center gap-2" data-step="4">
+        <div class="step-num w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-semibold shrink-0">4</div>
+        <span class="step-label hidden sm:inline text-slate-500">Betalning</span>
+      </li>
+      <li class="flex-1 h-px bg-slate-200"></li>
+      <li class="step-item flex-1 flex items-center gap-2" data-step="5">
+        <div class="step-num w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-semibold shrink-0">5</div>
+        <span class="step-label hidden sm:inline text-slate-500">Klart</span>
+      </li>
+    </ol>
+
+    <div class="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
+
+      <!-- LEFT: Form panes -->
+      <div>
+
+        <!-- Step 1: Account -->
+        <section id="pane-1" class="pane bg-white rounded-2xl border border-slate-200 card-shadow p-6 md:p-8">
+          <h1 class="font-serif text-2xl md:text-3xl font-semibold mb-2">Skapa ditt konto</h1>
+          <p class="text-sm text-slate-500 mb-6">Vi använder ditt mejl för inloggning via engångslänk — inget lösenord att komma ihåg.</p>
+
+          <div class="space-y-4">
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">Ditt namn</span>
+              <input id="acc-name" type="text" autocomplete="name" placeholder="För- och efternamn"
+                class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base" />
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">E-postadress</span>
+              <input id="acc-email" type="email" autocomplete="email" placeholder="namn@foretag.se"
+                class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base" />
+              <span class="text-xs text-slate-500 mt-1 block">Vi mejlar dig en engångslänk så snart kontot är klart.</span>
+            </label>
+
+            <label class="flex items-start gap-3 cursor-pointer pt-2">
+              <input id="acc-terms" type="checkbox" class="mt-1 w-5 h-5 rounded border-slate-300 text-teal-600" />
+              <span class="text-sm text-slate-700">Jag godkänner pact:eds <a href="juridik/anvandarvillkor.md" class="text-teal-700 hover:underline">användarvillkor</a> och har läst <a href="juridik/integritetspolicy.md" class="text-teal-700 hover:underline">integritetspolicyn</a>.</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Step 2: Company -->
+        <section id="pane-2" class="pane hidden bg-white rounded-2xl border border-slate-200 card-shadow p-6 md:p-8">
+          <h1 class="font-serif text-2xl md:text-3xl font-semibold mb-2">Berätta om företaget</h1>
+          <p class="text-sm text-slate-500 mb-6">Vi anpassar din plan utifrån storleken och använder uppgifterna för fakturering.</p>
+
+          <div class="space-y-4">
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">Företagsnamn</span>
+              <input id="co-name" type="text" autocomplete="organization" placeholder="Aktiebolaget Exempel AB"
+                class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base" />
+            </label>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <label class="block">
+                <span class="text-sm font-medium text-slate-700">Organisationsnummer</span>
+                <input id="co-orgnr" type="text" inputmode="numeric" placeholder="556677-8899"
+                  class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base" />
+              </label>
+
+              <label class="block">
+                <span class="text-sm font-medium text-slate-700">Antal anställda</span>
+                <select id="co-size" class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base bg-white">
+                  <option value="">Välj…</option>
+                  <option value="small">2–200</option>
+                  <option value="medium">200–1 000</option>
+                  <option value="large">1 000–5 000</option>
+                  <option value="enterprise">Fler än 5 000</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <label class="block">
+                <span class="text-sm font-medium text-slate-700">Faktureringsadress</span>
+                <input id="co-address" type="text" autocomplete="street-address" placeholder="Gatuadress 12"
+                  class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base" />
+              </label>
+              <label class="block">
+                <span class="text-sm font-medium text-slate-700">Postnummer och ort</span>
+                <input id="co-postal" type="text" placeholder="111 22 Stockholm"
+                  class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base" />
+              </label>
+            </div>
+
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">Vilket HR-system används idag? <span class="text-slate-400 font-normal">(frivilligt)</span></span>
+              <select id="co-hr" class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base bg-white">
+                <option value="">Inget eller annat</option>
+                <option>CatalystOne</option>
+                <option>Visma Lön</option>
+                <option>Hogia</option>
+                <option>Fortnox</option>
+                <option>Personalkollen</option>
+                <option>Annat</option>
+              </select>
+              <span class="text-xs text-slate-500 mt-1 block">Hjälper oss att förbereda rätt integration åt dig.</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Step 3: Plan -->
+        <section id="pane-3" class="pane hidden bg-white rounded-2xl border border-slate-200 card-shadow p-6 md:p-8">
+          <h1 class="font-serif text-2xl md:text-3xl font-semibold mb-2">Välj din plan</h1>
+          <p class="text-sm text-slate-500 mb-6">Alla planer faktureras årsvis och har 14 dagars gratis testperiod. Du kan säga upp när du vill — inga uppsägningstider.</p>
+
+          <div class="space-y-3" id="plan-options">
+            <label class="plan-option block border-2 border-slate-200 rounded-xl p-5 cursor-pointer hover:border-teal-300 transition" data-plan="free">
+              <div class="flex items-start gap-4">
+                <input type="radio" name="plan" value="free" class="mt-1.5 w-5 h-5 text-teal-600 border-slate-300">
+                <div class="flex-1">
+                  <div class="flex items-baseline justify-between flex-wrap gap-2">
+                    <div>
+                      <div class="font-semibold text-slate-900">Gratis</div>
+                      <div class="text-xs text-slate-500">Upp till 10 signaturer/år</div>
+                    </div>
+                    <div class="font-serif text-2xl font-semibold">0 <span class="text-sm font-normal text-slate-500">kr/år</span></div>
+                  </div>
+                  <p class="text-sm text-slate-600 mt-2">Testa skarpt utan kort · Alla mallar · QR + signering · E-postleverans</p>
+                </div>
+              </div>
+            </label>
+
+            <label class="plan-option block border-2 border-slate-200 rounded-xl p-5 cursor-pointer hover:border-teal-300 transition" data-plan="small">
+              <div class="flex items-start gap-4">
+                <input type="radio" name="plan" value="small" class="mt-1.5 w-5 h-5 text-teal-600 border-slate-300">
+                <div class="flex-1">
+                  <div class="flex items-baseline justify-between flex-wrap gap-2">
+                    <div>
+                      <div class="font-semibold text-slate-900">Liten</div>
+                      <div class="text-xs text-slate-500">Upp till 500 signaturer/år</div>
+                    </div>
+                    <div class="font-serif text-2xl font-semibold">299 <span class="text-sm font-normal text-slate-500">kr/år</span></div>
+                  </div>
+                  <p class="text-sm text-slate-600 mt-2">Allt i Gratis + audit trail + HR-systemintegration · ≈ 25 kr/mån</p>
+                </div>
+              </div>
+            </label>
+
+            <label class="plan-option block border-2 border-teal-600 rounded-xl p-5 cursor-pointer bg-teal-50 transition relative" data-plan="medium">
+              <div class="absolute -top-3 right-5 bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Mest valt</div>
+              <div class="flex items-start gap-4">
+                <input type="radio" name="plan" value="medium" checked class="mt-1.5 w-5 h-5 text-teal-600 border-slate-300">
+                <div class="flex-1">
+                  <div class="flex items-baseline justify-between flex-wrap gap-2">
+                    <div>
+                      <div class="font-semibold text-slate-900">Mellan</div>
+                      <div class="text-xs text-slate-500">Upp till 2 000 signaturer/år</div>
+                    </div>
+                    <div class="font-serif text-2xl font-semibold">699 <span class="text-sm font-normal text-slate-500">kr/år</span></div>
+                  </div>
+                  <p class="text-sm text-slate-600 mt-2">Allt i Liten + egen logotyp + multipla administratörer · ≈ 58 kr/mån</p>
+                </div>
+              </div>
+            </label>
+
+            <label class="plan-option block border-2 border-slate-200 rounded-xl p-5 cursor-pointer hover:border-teal-300 transition" data-plan="large">
+              <div class="flex items-start gap-4">
+                <input type="radio" name="plan" value="large" class="mt-1.5 w-5 h-5 text-teal-600 border-slate-300">
+                <div class="flex-1">
+                  <div class="flex items-baseline justify-between flex-wrap gap-2">
+                    <div>
+                      <div class="font-semibold text-slate-900">Stor</div>
+                      <div class="text-xs text-slate-500">Upp till 5 000 signaturer/år</div>
+                    </div>
+                    <div class="font-serif text-2xl font-semibold">999 <span class="text-sm font-normal text-slate-500">kr/år</span></div>
+                  </div>
+                  <p class="text-sm text-slate-600 mt-2">Allt i Mellan + SSO Microsoft/Google · Custom export · ≈ 83 kr/mån</p>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <div class="mt-5 flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <div class="text-teal-600 text-2xl">🎁</div>
+            <div class="text-sm text-slate-700">
+              <strong>14 dagar gratis testperiod</strong> på alla betalplaner. Vi blockerar aldrig signaturer mitt i en utlämning — går du över din kvot fortsätter tjänsten fungera och vi uppgraderar dig mjukt om det blir varaktigt.
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 4: Payment -->
+        <section id="pane-4" class="pane hidden bg-white rounded-2xl border border-slate-200 card-shadow p-6 md:p-8">
+          <h1 class="font-serif text-2xl md:text-3xl font-semibold mb-2">Betalningsuppgifter</h1>
+          <p class="text-sm text-slate-500 mb-6">Vi sparar ditt kort men <strong class="text-slate-700">debiterar inget på 14 dagar</strong>. Du får påminnelse innan första fakturan.</p>
+
+          <div class="space-y-4">
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">Namn på kortet</span>
+              <input id="pay-name" type="text" autocomplete="cc-name" placeholder="Som det står på kortet"
+                class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base" />
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">Kortnummer</span>
+              <div class="relative mt-1">
+                <input id="pay-card" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="23"
+                  class="ring-focus w-full rounded-lg border border-slate-300 px-3 py-3 pr-16 text-base font-mono tracking-wide" />
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+                  <span class="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded">VISA</span>
+                  <span class="text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded">MC</span>
+                </div>
+              </div>
+            </label>
+
+            <div class="grid grid-cols-2 gap-4">
+              <label class="block">
+                <span class="text-sm font-medium text-slate-700">Giltigt t.o.m.</span>
+                <input id="pay-exp" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/ÅÅ" maxlength="5"
+                  class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base font-mono" />
+              </label>
+              <label class="block">
+                <span class="text-sm font-medium text-slate-700">CVV</span>
+                <input id="pay-cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4"
+                  class="ring-focus mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-base font-mono" />
+              </label>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
+              <svg class="w-5 h-5 text-teal-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z" stroke-linejoin="round"/></svg>
+              <div class="text-xs text-slate-600">
+                <strong class="text-slate-700 block">Säker betalning via Stripe.</strong>
+                pact:ed ser eller lagrar aldrig dina kortuppgifter. Stripe är PCI-DSS Level 1-certifierat och hanterar betalningar för Spotify, Klarna och tusentals andra svenska företag.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 5: Done -->
+        <section id="pane-5" class="pane hidden bg-white rounded-2xl border border-slate-200 card-shadow p-6 md:p-10 text-center">
+          <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-teal-100 flex items-center justify-center">
+            <svg class="w-10 h-10 text-teal-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 class="font-serif text-3xl font-semibold mb-2">Välkommen till pact:ed!</h1>
+          <p class="text-slate-600 mb-6 max-w-md mx-auto">Vi har skickat en inloggningslänk till <strong id="done-email" class="text-slate-900">din mejl</strong>. Klicka på länken så är du inloggad — sedan kan du börja skapa dokument.</p>
+
+          <div class="bg-slate-50 rounded-xl p-5 text-left max-w-md mx-auto mb-6 space-y-2 text-sm">
+            <div class="flex justify-between gap-2"><span class="text-slate-500">Företag:</span> <span class="font-medium text-slate-900" id="done-co">—</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-500">Plan:</span> <span class="font-medium text-slate-900" id="done-plan">—</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-500">Pris:</span> <span class="font-medium text-slate-900" id="done-price">—</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-500">Testperiod:</span> <span class="font-medium text-slate-900" id="done-trial">—</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-500">Första fakturadatum:</span> <span class="font-medium text-slate-900" id="done-first">—</span></div>
+          </div>
+
+          <div class="space-y-2 max-w-md mx-auto">
+            <a href="index.html" class="block bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-xl">Gå till adminpanelen</a>
+            <a href="account.html" class="block text-sm text-slate-600 hover:text-slate-900 py-2">Hantera prenumeration</a>
+          </div>
+        </section>
+
+        <!-- Error display -->
+        <div id="signup-error" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mt-4"></div>
+
+        <!-- Navigation buttons -->
+        <div class="flex gap-3 mt-5" id="nav-buttons">
+          <button id="btn-back" class="flex-1 sm:flex-initial sm:px-8 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-medium py-3 rounded-xl hidden">Tillbaka</button>
+          <button id="btn-next" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-xl">Fortsätt</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Order summary (sticky on desktop) -->
+      <aside id="summary" class="hidden lg:block bg-white rounded-2xl border border-slate-200 card-shadow p-6 sticky top-6">
+        <h3 class="font-semibold text-slate-900 mb-1">Din beställning</h3>
+        <p class="text-xs text-slate-500 mb-5">Justera planen i steg 3 om det behövs.</p>
+
+        <div class="space-y-3 text-sm">
+          <div class="flex items-baseline justify-between">
+            <div>
+              <div class="font-medium text-slate-900" id="sum-plan-name">Mellan</div>
+              <div class="text-xs text-slate-500" id="sum-plan-size">Upp till 2 000 signaturer/år</div>
+            </div>
+            <div class="font-serif text-xl font-semibold" id="sum-plan-price">999</div>
+          </div>
+          <div class="border-t border-slate-100 pt-3 flex justify-between text-slate-600 text-xs">
+            <span>Testperiod 14 dagar</span>
+            <span class="font-medium text-teal-700">0 kr</span>
+          </div>
+          <div class="border-t border-slate-100 pt-3 flex justify-between font-semibold text-slate-900">
+            <span>Att betala idag</span>
+            <span>0 kr</span>
+          </div>
+          <div class="text-xs text-slate-500 pt-2">Därefter <span id="sum-after-trial" class="font-medium text-slate-700">699 kr/år</span> exkl. moms.</div>
+        </div>
+
+        <div class="border-t border-slate-100 mt-5 pt-5 text-xs text-slate-500 space-y-1.5">
+          <div class="flex items-center gap-2"><svg class="w-4 h-4 text-teal-600" viewBox="0 0 20 20" fill="currentColor"><path d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4L8.5 12 15.3 5.3a1 1 0 011.4 0z"/></svg> 14 dagar gratis · ingen bindning</div>
+          <div class="flex items-center gap-2"><svg class="w-4 h-4 text-teal-600" viewBox="0 0 20 20" fill="currentColor"><path d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4L8.5 12 15.3 5.3a1 1 0 011.4 0z"/></svg> Säg upp när du vill</div>
+          <div class="flex items-center gap-2"><svg class="w-4 h-4 text-teal-600" viewBox="0 0 20 20" fill="currentColor"><path d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4L8.5 12 15.3 5.3a1 1 0 011.4 0z"/></svg> Säker betalning via Stripe</div>
+          <div class="flex items-center gap-2"><svg class="w-4 h-4 text-teal-600" viewBox="0 0 20 20" fill="currentColor"><path d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4L8.5 12 15.3 5.3a1 1 0 011.4 0z"/></svg> Mjuk uppgradering — vi blockerar aldrig</div>
+        </div>
+      </aside>
+    </div>
+
+  </main>
+
+<script>
+// ============== Storage ==============
+const SIGNUP_KEY = 'pacted_signup_v1';
+const SUB_KEY = 'pacted_subscription_v1';
+
+function loadDraft() {
+  try { return JSON.parse(localStorage.getItem(SIGNUP_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveDraft() {
+  const d = {
+    name: document.getElementById('acc-name').value,
+    email: document.getElementById('acc-email').value,
+    terms: document.getElementById('acc-terms').checked,
+    coName: document.getElementById('co-name').value,
+    orgnr: document.getElementById('co-orgnr').value,
+    size: document.getElementById('co-size').value,
+    address: document.getElementById('co-address').value,
+    postal: document.getElementById('co-postal').value,
+    hr: document.getElementById('co-hr').value,
+    plan: document.querySelector('input[name="plan"]:checked')?.value || 'medium',
+  };
+  localStorage.setItem(SIGNUP_KEY, JSON.stringify(d));
+}
+function restoreDraft() {
+  const d = loadDraft();
+  if (d.name) document.getElementById('acc-name').value = d.name;
+  if (d.email) document.getElementById('acc-email').value = d.email;
+  if (d.terms) document.getElementById('acc-terms').checked = true;
+  if (d.coName) document.getElementById('co-name').value = d.coName;
+  if (d.orgnr) document.getElementById('co-orgnr').value = d.orgnr;
+  if (d.size) document.getElementById('co-size').value = d.size;
+  if (d.address) document.getElementById('co-address').value = d.address;
+  if (d.postal) document.getElementById('co-postal').value = d.postal;
+  if (d.hr) document.getElementById('co-hr').value = d.hr;
+  if (d.plan) {
+    const r = document.querySelector(`input[name="plan"][value="${d.plan}"]`);
+    if (r) r.checked = true;
+  }
+}
+
+// ============== Plan data ==============
+const PLANS = {
+  free:   { name: 'Gratis', size: 'Upp till 10 signaturer/år',    price: 0,   interval: 'år' },
+  small:  { name: 'Liten',  size: 'Upp till 500 signaturer/år',   price: 299, interval: 'år' },
+  medium: { name: 'Mellan', size: 'Upp till 2 000 signaturer/år', price: 699, interval: 'år' },
+  large:  { name: 'Stor',   size: 'Upp till 5 000 signaturer/år', price: 999, interval: 'år' },
+};
+
+function getSelectedPlan() {
+  const v = document.querySelector('input[name="plan"]:checked')?.value || 'medium';
+  return { key: v, ...PLANS[v] };
+}
+
+function updateSummary() {
+  const p = getSelectedPlan();
+  document.getElementById('sum-plan-name').textContent = p.name;
+  document.getElementById('sum-plan-size').textContent = p.size;
+  document.getElementById('sum-plan-price').textContent = p.price;
+  document.getElementById('sum-after-trial').textContent = p.price === 0 ? 'Gratis' : `${p.price} kr/år`;
+}
+
+// ============== Step navigation ==============
+let currentStep = 1;
+
+function showStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.pane').forEach(el => el.classList.add('hidden'));
+  document.getElementById('pane-' + n).classList.remove('hidden');
+
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = parseInt(el.dataset.step, 10);
+    const num = el.querySelector('.step-num');
+    const lbl = el.querySelector('.step-label');
+    if (s < n) {
+      num.className = 'step-num w-7 h-7 rounded-full bg-teal-600 text-white flex items-center justify-center font-semibold shrink-0';
+      num.textContent = '✓';
+      if (lbl) lbl.className = 'step-label hidden sm:inline font-medium text-slate-700';
+    } else if (s === n) {
+      num.className = 'step-num w-7 h-7 rounded-full bg-teal-600 text-white flex items-center justify-center font-semibold shrink-0';
+      num.textContent = String(s);
+      if (lbl) lbl.className = 'step-label hidden sm:inline font-medium';
+    } else {
+      num.className = 'step-num w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-semibold shrink-0';
+      num.textContent = String(s);
+      if (lbl) lbl.className = 'step-label hidden sm:inline text-slate-500';
+    }
+  });
+
+  const btnBack = document.getElementById('btn-back');
+  const btnNext = document.getElementById('btn-next');
+  const nav = document.getElementById('nav-buttons');
+
+  btnBack.classList.toggle('hidden', n === 1 || n === 5);
+
+  if (n === 5) {
+    nav.classList.add('hidden');
+  } else {
+    nav.classList.remove('hidden');
+    btnNext.textContent = (n === 4) ? 'Starta prenumeration' : (n === 3 ? 'Fortsätt till betalning' : 'Fortsätt');
+  }
+
+  updateSummary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showError(msg) {
+  const el = document.getElementById('signup-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => el.classList.add('hidden'), 6000);
+}
+
+function validateStep(n) {
+  document.getElementById('signup-error').classList.add('hidden');
+  if (n === 1) {
+    if (!document.getElementById('acc-name').value.trim()) return 'Fyll i ditt namn.';
+    const email = document.getElementById('acc-email').value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Ange en giltig e-postadress.';
+    if (!document.getElementById('acc-terms').checked) return 'Du måste godkänna villkoren.';
+  }
+  if (n === 2) {
+    if (!document.getElementById('co-name').value.trim()) return 'Företagsnamn behövs.';
+    if (!document.getElementById('co-orgnr').value.trim()) return 'Organisationsnummer behövs.';
+    if (!document.getElementById('co-size').value) return 'Välj antal anställda.';
+  }
+  if (n === 4) {
+    if (!document.getElementById('pay-name').value.trim()) return 'Ange namn på kortet.';
+    const card = document.getElementById('pay-card').value.replace(/\s+/g, '');
+    if (!card || card.length < 13) return 'Ange ett giltigt kortnummer.';
+    if (!/^\d{2}\/\d{2}$/.test(document.getElementById('pay-exp').value)) return 'Ange giltighetsdatum som MM/ÅÅ.';
+    if (!/^\d{3,4}$/.test(document.getElementById('pay-cvv').value)) return 'Ange CVV (3 eller 4 siffror).';
+  }
+  return null;
+}
+
+// ============== Recommendation: jump to matching plan based on company size ==============
+document.getElementById('co-size').addEventListener('change', (e) => {
+  const map = { small: 'small', medium: 'medium', large: 'large' };
+  const plan = map[e.target.value];
+  if (plan) {
+    const r = document.querySelector(`input[name="plan"][value="${plan}"]`);
+    if (r) r.checked = true;
+    updateSummary();
+  }
+});
+
+document.querySelectorAll('input[name="plan"]').forEach(r => r.addEventListener('change', () => {
+  updateSummary();
+  // Update visual styling on plan options
+  document.querySelectorAll('.plan-option').forEach(opt => {
+    const checked = opt.querySelector('input').checked;
+    opt.classList.toggle('border-teal-600', checked);
+    opt.classList.toggle('bg-teal-50', checked);
+    opt.classList.toggle('border-slate-200', !checked);
+  });
+}));
+
+// ============== Card formatting helpers ==============
+document.getElementById('pay-card').addEventListener('input', (e) => {
+  const v = e.target.value.replace(/\D/g, '').slice(0, 19);
+  e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
+});
+document.getElementById('pay-exp').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 4);
+  if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
+  e.target.value = v;
+});
+document.getElementById('pay-cvv').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+});
+
+// ============== Button handlers ==============
+document.getElementById('btn-next').addEventListener('click', async () => {
+  const err = validateStep(currentStep);
+  if (err) return showError(err);
+  saveDraft();
+
+  if (currentStep === 4) {
+    // Simulate payment processing
+    const btn = document.getElementById('btn-next');
+    btn.disabled = true;
+    btn.textContent = 'Sätter upp ditt konto…';
+    await new Promise(r => setTimeout(r, 1200));
+
+    // Save subscription record
+    const draft = loadDraft();
+    const plan = getSelectedPlan();
+    const now = new Date();
+    const trialEnd = new Date(now); trialEnd.setDate(trialEnd.getDate() + 14);
+
+    const sub = {
+      email: draft.email,
+      name: draft.name,
+      company: draft.coName,
+      orgnr: draft.orgnr,
+      hr: draft.hr,
+      plan: plan.key,
+      planName: plan.name,
+      price: plan.price,
+      status: 'trialing',
+      createdAt: now.toISOString(),
+      trialEndsAt: trialEnd.toISOString(),
+      nextBillingAt: trialEnd.toISOString(),
+      cardLast4: document.getElementById('pay-card').value.replace(/\s+/g, '').slice(-4),
+    };
+    localStorage.setItem(SUB_KEY, JSON.stringify(sub));
+
+    // Populate done screen
+    document.getElementById('done-email').textContent = sub.email;
+    document.getElementById('done-co').textContent = sub.company;
+    document.getElementById('done-plan').textContent = sub.planName;
+    document.getElementById('done-price').textContent = sub.price === 0 ? 'Gratis' : `${sub.price} kr/år`;
+    document.getElementById('done-trial').textContent = '14 dagar gratis';
+    document.getElementById('done-first').textContent = new Date(sub.nextBillingAt).toLocaleDateString('sv-SE');
+
+    btn.disabled = false;
+    btn.textContent = 'Starta prenumeration';
+    showStep(5);
+  } else {
+    showStep(currentStep + 1);
+  }
+});
+
+document.getElementById('btn-back').addEventListener('click', () => {
+  if (currentStep > 1) showStep(currentStep - 1);
+});
+
+// Init
+restoreDraft();
+showStep(1);
+updateSummary();
+</script>
+</b

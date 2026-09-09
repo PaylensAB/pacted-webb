@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>pact:ed — signera dokument</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
+          onerror="this.onerror=null;this.src='https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'"></script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; }
+    .signature-canvas {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      background: #fff;
+      width: 100%;
+      height: 220px;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .signature-canvas.has-signature { border-style: solid; border-color: #0f766e; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <div class="max-w-xl mx-auto px-4 py-6">
+
+    <header class="flex items-center gap-2 mb-6">
+      <div class="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold">p</div>
+      <div>
+        <div class="font-semibold text-slate-900">pact:ed</div>
+        <div class="text-xs text-slate-500">Snabb signering på arbetsplatsen</div>
+      </div>
+    </header>
+
+    <div id="state-loading" class="bg-white rounded-2xl shadow-sm p-8 text-center">
+      <div class="text-slate-500">Laddar dokument…</div>
+    </div>
+
+    <div id="state-notfound" class="hidden bg-white rounded-2xl shadow-sm p-8 text-center">
+      <div class="text-5xl mb-2">📄</div>
+      <h1 class="text-lg font-semibold text-slate-900 mb-1">Dokumentet kunde inte hittas</h1>
+      <p class="text-sm text-slate-500">QR-koden kan vara felaktig eller dokumentet kan ha tagits bort. Kontakta din arbetsgivare.</p>
+    </div>
+
+    <div id="state-already" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900 mb-4">
+      Du har redan signerat detta dokument på denna enhet. Du kan signera igen om det behövs.
+    </div>
+
+    <main id="state-form" class="hidden space-y-4">
+
+      <section class="bg-white rounded-2xl shadow-sm p-5">
+        <div class="text-xs uppercase tracking-wide text-teal-700 font-semibold mb-1" id="doc-type">DOKUMENT</div>
+        <h1 class="text-xl font-semibold text-slate-900 mb-2" id="doc-title">—</h1>
+        <p class="text-sm text-slate-600 whitespace-pre-wrap" id="doc-description"></p>
+        <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+          Skapat: <span id="doc-created">—</span>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm p-5">
+        <h2 class="font-semibold text-slate-900 mb-3">Dina uppgifter</h2>
+        <div class="space-y-3">
+          <label class="block">
+            <span class="text-sm text-slate-700">Namn</span>
+            <input id="signer-name" type="text" autocomplete="name" required
+              class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none" />
+          </label>
+          <label class="block">
+            <span class="text-sm text-slate-700">Anställningsnummer</span>
+            <input id="signer-empno" type="text" inputmode="text" required
+              class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none" />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-slate-900">Din signatur</h2>
+          <button type="button" id="clear-sig" class="text-sm text-teal-700 font-medium">Rensa</button>
+        </div>
+        <canvas id="sig-canvas" class="signature-canvas"></canvas>
+        <p class="text-xs text-slate-500 mt-2">Rita din signatur med fingret, pekpennan eller musen.</p>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm p-5">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input id="confirm-check" type="checkbox" class="mt-1 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+          <span class="text-sm text-slate-700">
+            Jag bekräftar att jag har tagit del av dokumentet ovan och att uppgifterna jag lämnar är korrekta.
+          </span>
+        </label>
+      </section>
+
+      <div id="form-error" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700"></div>
+
+      <button id="submit-btn" type="button"
+        class="w-full bg-teal-600 hover:bg-teal-700 active:bg-teal-800 disabled:bg-slate-300 text-white font-semibold py-3.5 rounded-xl text-base transition">
+        Signera och skicka
+      </button>
+
+      <p class="text-xs text-center text-slate-400 pt-2 pb-6">
+        Signaturen registreras tillsammans med tidsstämpel och enhetsinformation.
+      </p>
+    </main>
+
+    <main id="state-done" class="hidden">
+      <div class="bg-white rounded-2xl shadow-sm p-8 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-teal-100 flex items-center justify-center">
+          <svg class="w-8 h-8 text-teal-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h1 class="text-xl font-semibold text-slate-900 mb-1">Tack!</h1>
+        <p class="text-sm text-slate-600 mb-5">Din signatur är registrerad. En kopia har laddats ner till din enhet och din arbetsgivare har fått en notis.</p>
+        <div class="text-left bg-slate-50 rounded-xl p-4 text-sm space-y-1">
+          <div><span class="text-slate-500">Dokument:</span> <span id="done-doc">—</span></div>
+          <div><span class="text-slate-500">Signerat av:</span> <span id="done-name">—</span></div>
+          <div><span class="text-slate-500">Anst.nr:</span> <span id="done-empno">—</span></div>
+          <div><span class="text-slate-500">Tidpunkt:</span> <span id="done-time">—</span></div>
+        </div>
+        <button id="download-again" class="mt-5 text-sm text-teal-700 font-medium">Ladda ner kvittot igen</button>
+      </div>
+    </main>
+
+  </div>
+
+<script>
+// ============== Storage ==============
+const STORAGE_KEY = 'pacted_documents_v1';
+function loadDocs() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveDocs(docs) { localStorage.setItem(STORAGE_KEY, JSON.stringify(docs)); }
+function getDoc(id) { return loadDocs().find(d => d.id === id); }
+function appendSignature(id, sig) {
+  const docs = loadDocs();
+  const doc = docs.find(d => d.id === id);
+  if (!doc) return false;
+  doc.signatures = doc.signatures || [];
+  doc.signatures.push(sig);
+  saveDocs(docs);
+  return true;
+}
+
+// ============== Custom signature pad (no library dependency) ==============
+class SimpleSignaturePad {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.drawing = false;
+    this.hasContent = false;
+    this.lastPoint = null;
+    this.onEnd = null;
+
+    // Use pointer events which unify mouse + touch + pen
+    this._down = this._down.bind(this);
+    this._move = this._move.bind(this);
+    this._up = this._up.bind(this);
+
+    canvas.addEventListener('pointerdown', this._down);
+    canvas.addEventListener('pointermove', this._move);
+    canvas.addEventListener('pointerup', this._up);
+    canvas.addEventListener('pointercancel', this._up);
+    canvas.addEventListener('pointerleave', (e) => { if (this.drawing) this._up(e); });
+
+    // Also mouse fallback (in case pointer events don't fire on some browser)
+    canvas.addEventListener('mousedown', this._down);
+    canvas.addEventListener('mousemove', this._move);
+    canvas.addEventListener('mouseup', this._up);
+
+    // Touch fallback
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this._down(this._touchEvt(e)); }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); this._move(this._touchEvt(e)); }, { passive: false });
+    canvas.addEventListener('touchend', (e) => { e.preventDefault(); this._up(this._touchEvt(e)); }, { passive: false });
+  }
+
+  _touchEvt(e) {
+    const t = e.touches[0] || e.changedTouches[0];
+    return { clientX: t ? t.clientX : 0, clientY: t ? t.clientY : 0, pointerId: 1 };
+  }
+
+  _coords(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const sx = this.canvas.width / rect.width;
+    const sy = this.canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * sx,
+      y: (e.clientY - rect.top) * sy,
+    };
+  }
+
+  _down(e) {
+    if (e.preventDefault) e.preventDefault();
+    this.drawing = true;
+    if (e.pointerId !== undefined && this.canvas.setPointerCapture) {
+      try { this.canvas.setPointerCapture(e.pointerId); } catch {}
+    }
+    this.lastPoint = this._coords(e);
+    // Draw a starting dot for short taps
+    const p = this.lastPoint;
+    const ctx = this.ctx;
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  _move(e) {
+    if (!this.drawing) return;
+    if (e.preventDefault) e.preventDefault();
+    const p = this._coords(e);
+    const ctx = this.ctx;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(this.lastPoint.x, this.lastPoint.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    this.lastPoint = p;
+    this.hasContent = true;
+  }
+
+  _up(e) {
+    if (!this.drawing) return;
+    this.drawing = false;
+    if (e && e.pointerId !== undefined && this.canvas.releasePointerCapture) {
+      try { this.canvas.releasePointerCapture(e.pointerId); } catch {}
+    }
+    if (this.hasContent) {
+      this.canvas.classList.add('has-signature');
+      if (this.onEnd) this.onEnd();
+    }
+  }
+
+  isEmpty() { return !this.hasContent; }
+
+  clear() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.hasContent = false;
+    this.canvas.classList.remove('has-signature');
+  }
+
+  toDataURL(type = 'image/png') {
+    return this.canvas.toDataURL(type);
+  }
+}
+
+// ============== Init ==============
+const params = new URLSearchParams(location.search);
+const docId = params.get('id');
+
+const elLoading = document.getElementById('state-loading');
+const elNotFound = document.getElementById('state-notfound');
+const elAlready = document.getElementById('state-already');
+const elForm = document.getElementById('state-form');
+const elDone = document.getElementById('state-done');
+
+let currentDoc = null;
+let signaturePad = null;
+
+function show(stateEl) {
+  [elLoading, elNotFound, elForm, elDone].forEach(e => e.classList.add('hidden'));
+  stateEl.classList.remove('hidden');
+}
+
+function formatDateTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('sv-SE', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function init() {
+  if (!docId) { show(elNotFound); return; }
+  const doc = getDoc(docId);
+  if (!doc) { show(elNotFound); return; }
+  currentDoc = doc;
+
+  document.getElementById('doc-type').textContent = (doc.type || 'Dokument').toUpperCase();
+  document.getElementById('doc-title').textContent = doc.title || '(utan titel)';
+  document.getElementById('doc-description').textContent = doc.description || '';
+  document.getElementById('doc-created').textContent = formatDateTime(doc.createdAt);
+
+  const localSig = localStorage.getItem('pacted_signed_' + docId);
+  if (localSig) elAlready.classList.remove('hidden');
+
+  show(elForm);
+  setTimeout(initSignaturePad, 50);
+}
+
+function initSignaturePad() {
+  const canvas = document.getElementById('sig-canvas');
+
+  function resizeCanvas() {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width || canvas.offsetWidth || 320;
+    const h = rect.height || canvas.offsetHeight || 220;
+    canvas.width = Math.max(1, Math.round(w * ratio));
+    canvas.height = Math.max(1, Math.round(h * ratio));
+    canvas.getContext('2d').setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+  resizeCanvas();
+
+  signaturePad = new SimpleSignaturePad(canvas);
+  signaturePad.onEnd = () => canvas.classList.add('has-signature');
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      // Save current signature image, resize, redraw
+      const data = canvas.toDataURL('image/png');
+      const hadContent = signaturePad.hasContent;
+      resizeCanvas();
+      if (hadContent) {
+        const img = new Image();
+        img.onload = () => {
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width / (window.devicePixelRatio||1), canvas.height / (window.devicePixelRatio||1));
+        };
+        img.src = data;
+        signaturePad.hasContent = true;
+      }
+    }, 150);
+  });
+
+  document.getElementById('clear-sig').addEventListener('click', () => signaturePad.clear());
+}
+
+document.getElementById('submit-btn').addEventListener('click', onSubmit);
+document.getElementById('download-again').addEventListener('click', () => {
+  const last = JSON.parse(localStorage.getItem('pacted_signed_' + docId) || 'null');
+  if (last) generateAndDownloadPdf(currentDoc, last, true);
+});
+
+function showError(msg) {
+  const el = document.getElementById('form-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => el.classList.add('hidden'), 6000);
+}
+
+async function onSubmit() {
+  const name = document.getElementById('signer-name').value.trim();
+  const empno = document.getElementById('signer-empno').value.trim();
+  const confirmed = document.getElementById('confirm-check').checked;
+
+  if (!name) return showError('Fyll i ditt namn.');
+  if (!empno) return showError('Fyll i ditt anställningsnummer.');
+  if (!signaturePad || signaturePad.isEmpty()) return showError('Rita din signatur.');
+  if (!confirmed) return showError('Du måste bekräfta att du tagit del av dokumentet.');
+  if (typeof PDFLib === 'undefined') return showError('PDF-biblioteket är inte laddat — ladda om sidan med Ctrl+Shift+R.');
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Skapar signerad kvittens…';
+
+  const signatureDataUrl = signaturePad.toDataURL('image/png');
+  const signedAt = new Date().toISOString();
+
+  const sigRecord = {
+    id: 'sig_' + Math.random().toString(36).slice(2, 10),
+    name, empno,
+    signatureDataUrl,
+    signedAt,
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+  };
+
+  appendSignature(currentDoc.id, sigRecord);
+  localStorage.setItem('pacted_signed_' + currentDoc.id, JSON.stringify(sigRecord));
+
+  try {
+    await generateAndDownloadPdf(currentDoc, sigRecord, true);
+  } catch (e) {
+    console.error(e);
+    showError('Kunde inte generera PDF: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = 'Signera och skicka';
+    return;
+  }
+
+  document.getElementById('done-doc').textContent = currentDoc.title;
+  document.getElementById('done-name').textContent = name;
+  document.getElementById('done-empno').textContent = empno;
+  document.getElementById('done-time').textContent = formatDateTime(signedAt);
+  show(elDone);
+}
+
+// ============== PDF generation ==============
+async function generateAndDownloadPdf(doc, sig, triggerDownload) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595.28, 841.89]);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const margin = 50;
+  let y = 800;
+  const teal = rgb(0.06, 0.46, 0.42);
+  const slate900 = rgb(0.05, 0.09, 0.16);
+  const slate600 = rgb(0.30, 0.36, 0.44);
+  const slate300 = rgb(0.80, 0.83, 0.88);
+
+  page.drawRectangle({ x: 0, y: 820, width: 595.28, height: 22, color: teal });
+  page.drawText('pact:ed  ·  Signerad kvittens', { x: margin, y: 826, size: 11, font: bold, color: rgb(1,1,1) });
+
+  y = 790;
+  page.drawText((doc.type || 'DOKUMENT').toUpperCase(), { x: margin, y, size: 9, font: bold, color: teal });
+
+  y -= 22;
+  drawWrappedText(page, doc.title || '(utan titel)', { x: margin, y, maxWidth: 495, font: bold, size: 20, color: slate900, lineHeight: 24 });
+  y -= linesNeeded(doc.title || '', 495, bold, 20) * 24;
+
+  if (doc.description) {
+    y -= 6;
+    drawWrappedText(page, doc.description, { x: margin, y, maxWidth: 495, font, size: 11, color: slate600, lineHeight: 15 });
+    y -= linesNeeded(doc.description, 495, font, 11) * 15;
+  }
+
+  y -= 14;
+  page.drawLine({ start: { x: margin, y }, end: { x: 545, y }, thickness: 0.5, color: slate300 });
+  y -= 22;
+
+  page.drawText('Signatur', { x: margin, y, size: 11, font: bold, color: slate900 });
+  y -= 18;
+
+  for (const [k, v] of [
+    ['Namn', sig.name],
+    ['Anställningsnummer', sig.empno],
+    ['Signerad', new Date(sig.signedAt).toLocaleString('sv-SE')],
+    ['Signatur-id', sig.id],
+  ]) {
+    page.drawText(k, { x: margin, y, size: 9, font, color: slate600 });
+    page.drawText(String(v || '—'), { x: margin + 130, y, size: 10, font: bold, color: slate900 });
+    y -= 16;
+  }
+
+  y -= 10;
+  page.drawText('Ritad signatur', { x: margin, y, size: 9, font, color: slate600 });
+  y -= 6;
+
+  const sigPng = await pdfDoc.embedPng(sig.signatureDataUrl);
+  const sigW = 240;
+  const sigH = (sigPng.height / sigPng.width) * sigW;
+  const sigBoxH = Math.max(sigH, 80);
+  const sigBoxY = y - sigBoxH;
+  page.drawRectangle({ x: margin, y: sigBoxY, width: sigW + 10, height: sigBoxH + 6, borderColor: slate300, borderWidth: 0.5 });
+  page.drawImage(sigPng, { x: margin + 5, y: sigBoxY + (sigBoxH - sigH) / 2, width: sigW, height: sigH });
+  y = sigBoxY - 18;
+
+  page.drawLine({ start: { x: margin, y }, end: { x: 545, y }, thickness: 0.5, color: slate300 });
+  y -= 16;
+  page.drawText('Spårbarhet (audit trail)', { x: margin, y, size: 11, font: bold, color: slate900 });
+  y -= 16;
+  for (const [k, v] of [
+    ['Dokument-id', doc.id],
+    ['Skapat av', doc.createdBy || 'Arbetsgivare'],
+    ['Skapat', new Date(doc.createdAt).toLocaleString('sv-SE')],
+    ['Enhet (user agent)', sig.userAgent || ''],
+    ['Språk', sig.language || ''],
+    ['Bevistyp', 'Enkel elektronisk signatur (SES) enligt eIDAS art. 3(10)'],
+  ]) {
+    page.drawText(k, { x: margin, y, size: 9, font, color: slate600 });
+    drawWrappedText(page, String(v || '—'), { x: margin + 130, y, maxWidth: 365, font, size: 9, color: slate900, lineHeight: 12 });
+    const lines = linesNeeded(String(v || ''), 365, font, 9);
+    y -= Math.max(lines * 12, 14);
+  }
+
+  page.drawLine({ start: { x: margin, y: 52 }, end: { x: 545, y: 52 }, thickness: 0.5, color: slate300 });
+  page.drawText('Genererad av pact:ed  ·  pacted.se  ·  Detta är en signerad kvittens av enklare typ.', {
+    x: margin, y: 36, size: 8, font, color: slate600,
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  if (triggerDownload) {
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeTitle = (doc.title || 'kvittens').replace(/[^\w\-åäöÅÄÖ]+/g, '_').slice(0, 60);
+    a.href = url;
+    a.download = `${safeTitle}_${sig.empno}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+}
+
+function wrapLines(text, maxWidth, font, size) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    const width = font.widthOfTextAtSize(test, size);
+    if (width > maxWidth && line) { lines.push(line); line = w; }
+    else { line = test; }
+  }
+  if (line) lines.push(line);
+  return lines.flatMap(l => l.split('\n'));
+}
+function linesNeeded(text, maxWidth, font, size) {
+  return Math.max(1, wrapLines(text, maxWidth, font, size).length);
+}
+function drawWrappedText(page, text, opts) {
+  const lines = wrapLines(text, opts.maxWidth, opts.font, opts.size);
+  let y = opts.y;
+  for (const ln of lines) {
+    page.drawText(ln, { x: opts.x, y, size: opts.size, font: opts.font, color: opts.color });
+    y -= opts.lineHeight;
+  }
+}
+
+init();
+</script>
+</body>
+</

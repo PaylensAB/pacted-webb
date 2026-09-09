@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pact:ed — Konto och prenumeration</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .font-serif { font-family: 'Fraunces', Georgia, serif; }
+    .card-shadow { box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 8px 24px -8px rgba(15,23,42,0.08); }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+  <nav class="bg-white border-b border-slate-100">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+      <a href="landing.html" class="flex items-center gap-2 font-semibold">
+        <span class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold">p</span>
+        <span>pact:ed</span>
+      </a>
+      <div class="hidden sm:flex items-center gap-5 text-sm text-slate-600 ml-6">
+        <a href="index.html" class="hover:text-slate-900">Admin</a>
+        <a href="account.html" class="text-slate-900 font-semibold">Konto</a>
+      </div>
+      <a href="mailto:hej@pacted.se" class="ml-auto text-sm text-slate-500 hover:text-slate-900">Kontakt</a>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-4 py-6 md:py-10">
+
+    <header class="mb-6">
+      <h1 class="font-serif text-3xl md:text-4xl font-semibold mb-1">Konto och prenumeration</h1>
+      <p class="text-sm text-slate-500" id="hello">Välkommen tillbaka.</p>
+    </header>
+
+    <!-- No subscription state -->
+    <div id="no-sub" class="hidden bg-white rounded-2xl border border-slate-200 card-shadow p-8 text-center">
+      <h2 class="font-serif text-xl font-semibold mb-2">Ingen prenumeration hittad</h2>
+      <p class="text-slate-600 mb-5">Det ser ut som att du inte har startat någon prenumeration än. Det tar 90 sekunder att komma igång.</p>
+      <a href="signup.html" class="inline-block bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-lg">Starta prenumeration</a>
+    </div>
+
+    <!-- Active subscription view -->
+    <div id="has-sub" class="hidden space-y-5">
+
+      <!-- Trial banner -->
+      <div id="trial-banner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 4v.01m0 9.99a10 10 0 110-20 10 10 0 010 20z" stroke-linecap="round"/></svg>
+        <div class="text-sm">
+          <strong class="text-amber-900 block">Du är i din testperiod</strong>
+          <span class="text-amber-800">Du har <span id="trial-days" class="font-semibold">14</span> dagar kvar gratis. Första fakturan dras <span id="trial-end" class="font-semibold">—</span>. Du kan säga upp innan dess utan kostnad.</span>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-5">
+        <!-- Current plan card -->
+        <div class="md:col-span-2 bg-white rounded-2xl border border-slate-200 card-shadow p-6">
+          <div class="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <div class="text-xs uppercase tracking-wide text-teal-700 font-semibold mb-1">Aktuell plan</div>
+              <h2 class="font-serif text-2xl font-semibold" id="plan-name">—</h2>
+              <p class="text-sm text-slate-500" id="plan-size">—</p>
+            </div>
+            <div class="text-right">
+              <div class="font-serif text-3xl font-semibold"><span id="plan-price">—</span> <span class="text-base font-normal text-slate-500">kr/år</span></div>
+              <div class="text-xs text-slate-500">exkl. moms</div>
+            </div>
+          </div>
+
+          <ul class="space-y-2 text-sm text-slate-700 mb-5" id="plan-features">
+            <!-- filled by JS -->
+          </ul>
+
+          <div class="flex flex-wrap gap-2">
+            <button id="btn-change" class="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-medium text-sm px-4 py-2 rounded-lg">Byt plan</button>
+            <button id="btn-cancel" class="bg-white border border-slate-200 hover:border-red-200 text-slate-500 hover:text-red-600 font-medium text-sm px-4 py-2 rounded-lg">Avsluta prenumeration</button>
+          </div>
+        </div>
+
+        <!-- Next bill / Payment method -->
+        <div class="space-y-5">
+          <div class="bg-white rounded-2xl border border-slate-200 card-shadow p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-1">Nästa fakturadatum</div>
+            <div class="font-serif text-2xl font-semibold mb-1" id="next-date">—</div>
+            <div class="text-sm text-slate-500"><span id="next-amount">—</span> kr</div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 card-shadow p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">Betalmetod</div>
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-12 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded text-white text-[10px] font-bold flex items-center justify-center">VISA</div>
+              <div class="font-mono text-sm">•••• •••• •••• <span id="card-last4">0000</span></div>
+            </div>
+            <button id="btn-update-card" class="text-sm text-teal-700 hover:underline font-medium">Uppdatera betalmetod</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Company info -->
+      <div class="bg-white rounded-2xl border border-slate-200 card-shadow p-6">
+        <h3 class="font-semibold text-slate-900 mb-3">Företagsuppgifter</h3>
+        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+          <div>
+            <div class="text-slate-500 text-xs uppercase tracking-wide mb-0.5">Företagsnamn</div>
+            <div class="font-medium" id="info-company">—</div>
+          </div>
+          <div>
+            <div class="text-slate-500 text-xs uppercase tracking-wide mb-0.5">Org.nr</div>
+            <div class="font-medium font-mono" id="info-orgnr">—</div>
+          </div>
+          <div>
+            <div class="text-slate-500 text-xs uppercase tracking-wide mb-0.5">HR-system</div>
+            <div class="font-medium" id="info-hr">—</div>
+          </div>
+          <div>
+            <div class="text-slate-500 text-xs uppercase tracking-wide mb-0.5">Administratör</div>
+            <div class="font-medium" id="info-admin">—</div>
+          </div>
+          <div class="sm:col-span-2 md:col-span-1">
+            <div class="text-slate-500 text-xs uppercase tracking-wide mb-0.5">E-post</div>
+            <div class="font-medium break-all" id="info-email">—</div>
+          </div>
+        </div>
+        <button id="btn-edit-info" class="mt-4 text-sm text-teal-700 hover:underline font-medium">Redigera</button>
+      </div>
+
+      <!-- Invoice history -->
+      <div class="bg-white rounded-2xl border border-slate-200 card-shadow p-6">
+        <h3 class="font-semibold text-slate-900 mb-1">Fakturahistorik</h3>
+        <p class="text-sm text-slate-500 mb-4">Senaste 12 månaderna.</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-xs text-slate-500 uppercase">
+              <tr class="border-b border-slate-100">
+                <th class="text-left font-medium py-2">Datum</th>
+                <th class="text-left font-medium py-2">Beskrivning</th>
+                <th class="text-right font-medium py-2">Belopp</th>
+                <th class="text-right font-medium py-2">Status</th>
+                <th class="py-2"></th>
+              </tr>
+            </thead>
+            <tbody id="invoice-list" class="divide-y divide-slate-100">
+              <!-- filled by JS -->
+            </tbody>
+          </table>
+        </div>
+        <div id="invoice-empty" class="hidden text-center py-8 text-sm text-slate-500">
+          Inga fakturor än — du är fortfarande i din gratis testperiod.
+        </div>
+      </div>
+
+      <!-- Documents/usage -->
+      <div class="bg-white rounded-2xl border border-slate-200 card-shadow p-6">
+        <h3 class="font-semibold text-slate-900 mb-1">Användning den här månaden</h3>
+        <p class="text-sm text-slate-500 mb-4">Statistik för aktuellt kalenderår. Vid 80 % av din kvot notiseras du.</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <div class="text-xs text-slate-500">Skapade dokument</div>
+            <div class="font-serif text-2xl font-semibold" id="usage-docs">0</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <div class="text-xs text-slate-500">Signaturer</div>
+            <div class="font-serif text-2xl font-semibold" id="usage-sigs">0</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <div class="text-xs text-slate-500">Levererade till HR</div>
+            <div class="font-serif text-2xl font-semibold" id="usage-deliv">0</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <div class="text-xs text-slate-500">Aktiva mallar</div>
+            <div class="font-serif text-2xl font-semibold" id="usage-templates">20</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legal links -->
+      <div class="bg-white rounded-2xl border border-slate-200 card-shadow p-6">
+        <h3 class="font-semibold text-slate-900 mb-3">Juridiska dokument</h3>
+        <div class="grid sm:grid-cols-2 gap-2 text-sm">
+          <a href="juridik/anvandarvillkor.md" class="flex items-center gap-2 py-1.5 text-slate-700 hover:text-teal-700"><span>→</span> Användarvillkor</a>
+          <a href="juridik/integritetspolicy.md" class="flex items-center gap-2 py-1.5 text-slate-700 hover:text-teal-700"><span>→</span> Integritetspolicy</a>
+          <a href="juridik/personuppgiftsbitradesavtal.md" class="flex items-center gap-2 py-1.5 text-slate-700 hover:text-teal-700"><span>→</span> Personuppgiftsbiträdesavtal</a>
+          <a href="juridik/cookiepolicy.md" class="flex items-center gap-2 py-1.5 text-slate-700 hover:text-teal-700"><span>→</span> Cookiepolicy</a>
+          <a href="juridik/sakerhetsbeskrivning.md" class="flex items-center gap-2 py-1.5 text-slate-700 hover:text-teal-700"><span>→</span> Säkerhetsbeskrivning</a>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-slate-400 mt-10 mb-4">pact:ed · Snabb digital signering · GDPR-compliant</p>
+  </main>
+
+  <!-- Change plan modal -->
+  <div id="modal" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h3 class="font-serif text-xl font-semibold">Byt plan</h3>
+          <p class="text-sm text-slate-500">Ändringen träder i kraft direkt och proportioneras mot nuvarande faktureringsperiod.</p>
+        </div>
+        <button id="modal-close" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div id="modal-plans" class="space-y-2"></div>
+    </div>
+  </div>
+
+<script>
+const SUB_KEY = 'pacted_subscription_v1';
+const DOCS_KEY = 'pacted_documents_v1'; // legacy from prototype admin
+
+const PLANS = {
+  free:   { name: 'Gratis', size: 'Upp till 10 signaturer/år',    price: 0,   limit: 10,    features: ['10 signaturer/år', 'Alla dokumentmallar', 'QR + signering', 'E-postleverans'] },
+  small:  { name: 'Liten',  size: 'Upp till 500 signaturer/år',   price: 299, limit: 500,   features: ['500 signaturer/år', 'Allt i Gratis', 'Audit trail i varje PDF', 'Direktintegration HR-system'] },
+  medium: { name: 'Mellan', size: 'Upp till 2 000 signaturer/år', price: 699, limit: 2000,  features: ['2 000 signaturer/år', 'Allt i Liten', 'Egen logotyp på dokumenten', 'Multipla administratörer'] },
+  large:  { name: 'Stor',   size: 'Upp till 5 000 signaturer/år', price: 999, limit: 5000,  features: ['5 000 signaturer/år', 'Allt i Mellan', 'SSO via Microsoft/Google', 'Custom export-format'] },
+};
+
+function loadSub() {
+  try { return JSON.parse(localStorage.getItem(SUB_KEY) || 'null'); }
+  catch { return null; }
+}
+function saveSub(sub) { localStorage.setItem(SUB_KEY, JSON.stringify(sub)); }
+
+function loadDocs() {
+  try { return JSON.parse(localStorage.getItem(DOCS_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function init() {
+  const sub = loadSub();
+  if (!sub) {
+    document.getElementById('no-sub').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('has-sub').classList.remove('hidden');
+
+  const plan = PLANS[sub.plan] || PLANS.medium;
+  document.getElementById('hello').textContent = sub.name ? `Välkommen tillbaka, ${sub.name}.` : 'Välkommen tillbaka.';
+
+  document.getElementById('plan-name').textContent = plan.name;
+  document.getElementById('plan-size').textContent = plan.size;
+  document.getElementById('plan-price').textContent = plan.price;
+  document.getElementById('plan-features').innerHTML = plan.features.map(f =>
+    `<li class="flex gap-2"><span class="text-teal-600">✓</span> ${f}</li>`
+  ).join('');
+
+  // Trial / billing
+  const now = new Date();
+  const trialEnd = new Date(sub.trialEndsAt);
+  const nextBill = new Date(sub.nextBillingAt);
+  const inTrial = sub.status === 'trialing' && trialEnd > now;
+
+  if (inTrial) {
+    const daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+    document.getElementById('trial-banner').classList.remove('hidden');
+    document.getElementById('trial-days').textContent = daysLeft;
+    document.getElementById('trial-end').textContent = trialEnd.toLocaleDateString('sv-SE');
+  }
+
+  document.getElementById('next-date').textContent = nextBill.toLocaleDateString('sv-SE');
+  document.getElementById('next-amount').textContent = plan.price.toLocaleString('sv-SE');
+  document.getElementById('card-last4').textContent = sub.cardLast4 || '0000';
+
+  document.getElementById('info-company').textContent = sub.company || '—';
+  document.getElementById('info-orgnr').textContent = sub.orgnr || '—';
+  document.getElementById('info-hr').textContent = sub.hr || 'Inget valt';
+  document.getElementById('info-admin').textContent = sub.name || '—';
+  document.getElementById('info-email').textContent = sub.email || '—';
+
+  // Invoice history — generate based on subscription age
+  const invoiceList = document.getElementById('invoice-list');
+  const invoices = generateInvoices(sub);
+  if (invoices.length === 0) {
+    document.getElementById('invoice-empty').classList.remove('hidden');
+  } else {
+    invoiceList.innerHTML = invoices.map(inv => `
+      <tr>
+        <td class="py-3 whitespace-nowrap">${inv.date}</td>
+        <td class="py-3 text-slate-600">${inv.desc}</td>
+        <td class="py-3 text-right font-medium">${inv.amount.toLocaleString('sv-SE')} kr</td>
+        <td class="py-3 text-right"><span class="inline-block text-xs px-2 py-0.5 rounded-full ${inv.status === 'Betald' ? 'bg-teal-50 text-teal-700' : 'bg-amber-50 text-amber-700'}">${inv.status}</span></td>
+        <td class="py-3 text-right"><a href="#" class="text-sm text-teal-700 hover:underline">PDF</a></td>
+      </tr>
+    `).join('');
+  }
+
+  // Usage
+  const docs = loadDocs();
+  const sigs = docs.flatMap(d => d.signatures || []);
+  document.getElementById('usage-docs').textContent = docs.length;
+  document.getElementById('usage-sigs').textContent = sigs.length;
+  document.getElementById('usage-deliv').textContent = sigs.length;
+}
+
+function generateInvoices(sub) {
+  // Generate plausible invoice history for non-trial subscriptions
+  const trialEnd = new Date(sub.trialEndsAt);
+  const now = new Date();
+  if (trialEnd > now) return []; // still in trial, no invoices
+  const plan = PLANS[sub.plan] || PLANS.medium;
+  const invoices = [];
+  let d = new Date(trialEnd);
+  while (d < now && invoices.length < 12) {
+    invoices.push({
+      date: d.toLocaleDateString('sv-SE'),
+      desc: `${plan.name} · årsabonnemang`,
+      amount: plan.price,
+      status: 'Betald',
+    });
+    d.setMonth(d.getMonth() + 1);
+  }
+  return invoices.reverse();
+}
+
+// ============== Modal: change plan ==============
+const modal = document.getElementById('modal');
+document.getElementById('btn-change').addEventListener('click', () => {
+  const sub = loadSub();
+  const modalPlans = document.getElementById('modal-plans');
+  modalPlans.innerHTML = Object.entries(PLANS).map(([key, p]) => {
+    const isCurrent = sub.plan === key;
+    return `
+      <div class="border-2 rounded-xl p-4 ${isCurrent ? 'border-teal-600 bg-teal-50' : 'border-slate-200 hover:border-teal-300'}">
+        <div class="flex items-baseline justify-between gap-2 mb-1">
+          <div>
+            <div class="font-semibold">${p.name} ${isCurrent ? '<span class="text-xs text-teal-700 font-medium">(nuvarande)</span>' : ''}</div>
+            <div class="text-xs text-slate-500">${p.size}</div>
+          </div>
+          <div class="font-serif text-xl font-semibold">${p.price === 0 ? 'Gratis' : p.price + ' <span class="text-sm font-normal text-slate-500">kr/år</span>'}</div>
+        </div>
+        ${isCurrent ? '' : `<button data-plan="${key}" class="change-plan-btn mt-2 w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold py-2 rounded-lg">Byt till ${p.name}</button>`}
+      </div>
+    `;
+  }).join('');
+
+  modalPlans.querySelectorAll('.change-plan-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newPlan = btn.dataset.plan;
+      sub.plan = newPlan;
+      sub.planName = PLANS[newPlan].name;
+      sub.price = PLANS[newPlan].price;
+      saveSub(sub);
+      modal.classList.add('hidden');
+      init();
+    });
+  });
+
+  modal.classList.remove('hidden');
+});
+document.getElementById('modal-close').addEventListener('click', () => modal.classList.add('hidden'));
+modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+document.getElementById('btn-cancel').addEventListener('click', () => {
+  if (!confirm('Är du säker på att du vill avsluta din prenumeration? Du kan fortsätta använda pact:ed till slutet av nuvarande period.')) return;
+  const sub = loadSub();
+  sub.status = 'canceled';
+  saveSub(sub);
+  alert('Prenumerationen är avslutad. Du har tillgång till tjänsten till och med ' + new Date(sub.nextBillingAt).toLocaleDateString('sv-SE'));
+  init();
+});
+
+document.getElementById('btn-update-card').addEventListener('click', () => {
+  alert('I produktion skickar detta dig till Stripes säkra betalmetodportal. För prototypen är detta enbart en knapp.');
+});
+document.getElementById('btn-edit-info').addEventListener('click', () => {
+  alert('I produktion skulle detta öppna en redigeringsvy. För prototypen sparas företagsuppgifterna vid signup.');
+});
+
+init();
+</script>
+</body>
+</htm
