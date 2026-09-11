@@ -129,7 +129,7 @@
       attach('touchend', (e) => { e.preventDefault(); this._up(this._t(e)); }, { passive: false });
     }
     _t(e) { const t = e.touches[0] || e.changedTouches[0]; return { clientX: t?.clientX||0, clientY: t?.clientY||0, pointerId: 1 }; }
-    _coords(e) { const r = this.canvas.getBoundingClientRect(); return { x: (e.clientX-r.left)*(this.canvas.width/r.width), y: (e.clientY-r.top)*(this.canvas.height/r.height) }; }
+    _coords(e) { const r = this.canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
     _down(e) { if (e.preventDefault) e.preventDefault(); this.drawing = true; this.lastPoint = this._coords(e); const p=this.lastPoint; this.ctx.fillStyle='#0f172a'; this.ctx.beginPath(); this.ctx.arc(p.x,p.y,1.4,0,Math.PI*2); this.ctx.fill(); }
     _move(e) { if (!this.drawing) return; if (e.preventDefault) e.preventDefault(); const p = this._coords(e); this.ctx.strokeStyle='#0f172a'; this.ctx.lineWidth=2.4; this.ctx.lineCap='round'; this.ctx.lineJoin='round'; this.ctx.beginPath(); this.ctx.moveTo(this.lastPoint.x,this.lastPoint.y); this.ctx.lineTo(p.x,p.y); this.ctx.stroke(); this.lastPoint=p; this.hasContent=true; }
     _up(e) { if (!this.drawing) return; this.drawing = false; if (this.hasContent) this.canvas.classList.add('has-signature'); }
