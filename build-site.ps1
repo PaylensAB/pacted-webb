@@ -22,17 +22,20 @@ Write-Host "Skapade: $site" -ForegroundColor Green
 
 # 2. Filer som ska med i den publika sajten
 $publicFiles = @(
-    @{ src = "landing.html";  dst = "index.html" },   # Marketing-sida = förstasida
-    @{ src = "index.html";    dst = "demo.html"  },   # Demo av signeringsflödet
-    @{ src = "signup.html";   dst = "signup.html" },
-    @{ src = "kvitto.html";   dst = "kvitto.html" },
-    @{ src = "sign.html";     dst = "sign.html" },
-    @{ src = "account.html";  dst = "account.html" },
-    @{ src = "_headers";      dst = "_headers" },
-    @{ src = "robots.txt";    dst = "robots.txt" },
-    @{ src = "sitemap.xml";   dst = "sitemap.xml" },
-    @{ src = "favicon.svg";   dst = "favicon.svg" },
-    @{ src = "404.html";      dst = "404.html" }
+    @{ src = "landing.html";   dst = "index.html" },   # Marketing-sida = förstasida
+    @{ src = "index.html";     dst = "demo.html"  },   # Demo av signeringsflödet
+    @{ src = "signup.html";    dst = "signup.html" },
+    @{ src = "kvitto.html";    dst = "kvitto.html" },
+    @{ src = "sign.html";      dst = "sign.html" },
+    @{ src = "account.html";   dst = "account.html" },
+    @{ src = "admin.html";     dst = "admin.html" },
+    @{ src = "mall.html";      dst = "mall.html" },
+    @{ src = "templates.js";   dst = "templates.js" },
+    @{ src = "_headers";       dst = "_headers" },
+    @{ src = "robots.txt";     dst = "robots.txt" },
+    @{ src = "sitemap.xml";    dst = "sitemap.xml" },
+    @{ src = "favicon.svg";    dst = "favicon.svg" },
+    @{ src = "404.html";       dst = "404.html" }
 )
 
 foreach ($f in $publicFiles) {

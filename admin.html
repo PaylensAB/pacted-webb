@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — pact:ed</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .font-serif { font-family: 'Fraunces', Georgia, serif; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; align-items: center; }
+    @media (max-width: 700px) { .field-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+  <!-- ================== INLOGGNING ================== -->
+  <div id="login-view" class="min-h-screen flex items-center justify-center px-4">
+    <div class="max-w-sm w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+      <div class="text-center mb-6">
+        <a href="/" class="inline-flex items-center gap-2 font-semibold text-slate-900">
+          <span class="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold">p</span>
+          pact:ed
+        </a>
+        <h1 class="font-serif text-2xl font-semibold mt-4">Adminpanel</h1>
+        <p class="text-sm text-slate-500 mt-1">Logga in för att hantera mallar.</p>
+      </div>
+      <form id="login-form" class="space-y-3">
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">E-post</span>
+          <input id="login-email" type="email" required autocomplete="username"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none" />
+        </label>
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">Lösenord</span>
+          <input id="login-password" type="password" required autocomplete="current-password"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none" />
+        </label>
+        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg">Logga in</button>
+        <p id="login-error" class="hidden text-sm text-red-600 text-center pt-2"></p>
+      </form>
+      <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 text-center">
+        Första gången? Standard-inloggning:<br>
+        <code class="bg-slate-100 px-1.5 py-0.5 rounded">admin@pacted.se</code> / <code class="bg-slate-100 px-1.5 py-0.5 rounded">pacted2026</code>
+        <br><span class="text-red-600 mt-1 inline-block">Byt direkt i "Inställningar"!</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================== ADMIN-VY ================== -->
+  <div id="admin-view" class="hidden">
+    <nav class="bg-white border-b border-slate-100 sticky top-0 z-40">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2 font-semibold">
+          <span class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold">p</span>
+          pact:ed
+        </a>
+        <span class="hidden sm:inline text-xs text-slate-400">·</span>
+        <span class="hidden sm:inline text-sm text-slate-500">Admin</span>
+        <div class="ml-auto flex items-center gap-2">
+          <button id="btn-settings" class="text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100">Inställningar</button>
+          <button id="btn-logout" class="text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100">Logga ut</button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-6">
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
+        <div>
+          <h1 class="font-serif text-3xl font-semibold">Mallar</h1>
+          <p class="text-slate-500 text-sm mt-1">Redigera befintliga mallar eller skapa nya för din verksamhet.</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="btn-new-template" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-lg">+ Ny mall</button>
+          <button id="btn-export" class="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg">Exportera</button>
+          <button id="btn-reset" class="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg">Återställ</button>
+        </div>
+      </div>
+
+      <div id="template-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </main>
+  </div>
+
+  <!-- ================== EDITOR-MODAL ================== -->
+  <div id="editor-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 overflow-y-auto p-4">
+    <div class="bg-white rounded-2xl max-w-3xl mx-auto my-8">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+        <h2 class="font-serif text-xl font-semibold" id="editor-title">Redigera mall</h2>
+        <button id="editor-close" class="text-slate-400 hover:text-slate-900 text-2xl leading-none">×</button>
+      </div>
+      <form id="editor-form" class="px-6 py-5 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block col-span-2">
+            <span class="text-sm font-medium text-slate-700">Titel</span>
+            <input id="ed-title" type="text" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600" />
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium text-slate-700">Kategori</span>
+            <input id="ed-category" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600" />
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium text-slate-700">Ikon (emoji)</span>
+            <input id="ed-icon" type="text" maxlength="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600" />
+          </label>
+          <label class="block col-span-2">
+            <span class="text-sm font-medium text-slate-700">Kort beskrivning</span>
+            <input id="ed-desc" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600" />
+          </label>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-slate-700">Fält att fylla i</span>
+            <button type="button" id="ed-add-field" class="text-xs text-teal-700 font-medium hover:text-teal-900">+ Lägg till fält</button>
+          </div>
+          <div id="ed-fields" class="space-y-2"></div>
+          <p class="text-xs text-slate-500 mt-1">Använd variabelnamnet i brödtexten som <code class="bg-slate-100 px-1 rounded">{{namn}}</code>.</p>
+        </div>
+
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">Brödtext (markdown)</span>
+          <textarea id="ed-body" rows="10" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600 font-mono text-sm"></textarea>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">Juridisk not (visas i footern)</span>
+          <textarea id="ed-legal" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600 text-sm"></textarea>
+        </label>
+
+        <div class="flex gap-2 pt-3 border-t border-slate-100">
+          <button type="submit" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg">Spara mall</button>
+          <button type="button" id="ed-delete" class="bg-white border border-red-200 hover:bg-red-50 text-red-700 font-medium px-4 py-2.5 rounded-lg">Radera</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================== INSTÄLLNINGAR-MODAL ================== -->
+  <div id="settings-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-serif text-xl font-semibold">Inställningar</h2>
+        <button id="settings-close" class="text-slate-400 hover:text-slate-900 text-2xl leading-none">×</button>
+      </div>
+      <form id="settings-form" class="space-y-3">
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">E-post</span>
+          <input id="set-email" type="email" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600" />
+        </label>
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">Nytt lösenord</span>
+          <input id="set-password" type="password" minlength="8" placeholder="Minst 8 tecken" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600" />
+          <span class="text-xs text-slate-500 mt-1 block">Lämna tomt för att behålla nuvarande lösenord.</span>
+        </label>
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">Företagsnamn</span>
+          <input id="set-company" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-teal-600" />
+        </label>
+        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg mt-2">Spara</button>
+        <div class="pt-3 border-t border-slate-100 text-xs text-slate-500">
+          <strong>Obs:</strong> Detta är en klientbaserad inloggning som lagras i din webbläsare. För flera användare eller åtkomst från annan enhet krävs backend-lösning (kommer i version 2).
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="templates.js"></script>
+  <script>
+  // ============= KONFIGURATION =============
+  const DEFAULT_EMAIL = 'admin@pacted.se';
+  const DEFAULT_PASSWORD = 'pacted2026';
+  const SESSION_KEY = 'pacted_admin_session_v1';
+  const CREDS_KEY = 'pacted_admin_creds_v1';
+  const COMPANY_KEY = 'pacted_admin_company_v1';
+
+  // ============= ENKEL HASHING (sha-256) =============
+  async function hash(str) {
+    const buf = new TextEncoder().encode(str);
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function getCreds() {
+    try {
+      const raw = localStorage.getItem(CREDS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
+  async function setCreds(email, password) {
+    const passHash = password ? await hash(password) : (getCreds()?.passHash);
+    localStorage.setItem(CREDS_KEY, JSON.stringify({ email, passHash }));
+  }
+
+  // ============= LOGIN =============
+  const loginView = document.getElementById('login-view');
+  const adminView = document.getElementById('admin-view');
+
+  function isLoggedIn() {
+    try {
+      const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+      if (!s) return false;
+      // Session gäller 24h
+      if (Date.now() - s.at > 24 * 60 * 60 * 1000) return false;
+      return true;
+    } catch { return false; }
+  }
+
+  function showAdmin() {
+    loginView.classList.add('hidden');
+    adminView.classList.remove('hidden');
+    renderTemplateList();
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const err = document.getElementById('login-error');
+
+    let creds = getCreds();
+    if (!creds) {
+      // Första inloggning: använd default
+      if (email === DEFAULT_EMAIL && password === DEFAULT_PASSWORD) {
+        await setCreds(DEFAULT_EMAIL, DEFAULT_PASSWORD);
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ email, at: Date.now() }));
+        showAdmin();
+        return;
+      }
+    } else {
+      const passHash = await hash(password);
+      if (email === creds.email && passHash === creds.passHash) {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ email, at: Date.now() }));
+        showAdmin();
+        return;
+      }
+    }
+    err.textContent = 'Fel e-post eller lösenord.';
+    err.classList.remove('hidden');
+  });
+
+  document.getElementById('btn-logout')?.addEventListener('click', () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+  });
+
+  // ============= INSTÄLLNINGAR =============
+  const settingsModal = document.getElementById('settings-modal');
+  document.getElementById('btn-settings')?.addEventListener('click', () => {
+    const creds = getCreds();
+    document.getElementById('set-email').value = creds?.email || DEFAULT_EMAIL;
+    document.getElementById('set-company').value = localStorage.getItem(COMPANY_KEY) || '';
+    document.getElementById('set-password').value = '';
+    settingsModal.classList.remove('hidden');
+  });
+  document.getElementById('settings-close').addEventListener('click', () => settingsModal.classList.add('hidden'));
+  settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
+  document.getElementById('settings-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('set-email').value.trim();
+    const password = document.getElementById('set-password').value;
+    const company = document.getElementById('set-company').value.trim();
+    await setCreds(email, password);
+    if (company) localStorage.setItem(COMPANY_KEY, company);
+    settingsModal.classList.add('hidden');
+    alert('Inställningar sparade.');
+  });
+
+  // ============= MALL-LISTA =============
+  const listEl = document.getElementById('template-list');
+  function renderTemplateList() {
+    const templates = window.getTemplates();
+    listEl.innerHTML = '';
+    templates.forEach((t, i) => {
+      const card = document.createElement('div');
+      card.className = 'bg-white rounded-xl border border-slate-200 p-5 hover:border-teal-400 hover:shadow-sm transition cursor-pointer';
+      card.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="text-3xl">${t.icon || '📄'}</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs uppercase tracking-wide text-teal-700 font-semibold mb-0.5">${t.category || ''}</div>
+            <h3 class="font-serif text-lg font-semibold text-slate-900 truncate">${t.title}</h3>
+            <p class="text-sm text-slate-600 mt-1 line-clamp-2">${t.description || ''}</p>
+            <div class="mt-3 flex items-center gap-3 text-xs text-slate-500">
+              <span>${(t.fields || []).length} fält</span>
+              <span>·</span>
+              <a href="mall.html?id=${encodeURIComponent(t.id)}" class="text-teal-700 hover:text-teal-900 font-medium">Förhandsvisa →</a>
+            </div>
+          </div>
+        </div>
+      `;
+      card.addEventListener('click', (ev) => {
+        if (ev.target.tagName === 'A') return; // låt länken funka
+        openEditor(i);
+      });
+      listEl.appendChild(card);
+    });
+  }
+
+  // ============= EDITOR =============
+  const editorModal = document.getElementById('editor-modal');
+  let editingIndex = -1;
+
+  function openEditor(index) {
+    const templates = window.getTemplates();
+    const t = index >= 0 ? templates[index] : {
+      id: 'ny-mall-' + Date.now(),
+      title: 'Ny mall',
+      category: '',
+      icon: '📄',
+      description: '',
+      fields: [],
+      bodyMarkdown: '',
+      legalNote: ''
+    };
+    editingIndex = index;
+    document.getElementById('editor-title').textContent = index >= 0 ? 'Redigera mall' : 'Ny mall';
+    document.getElementById('ed-title').value = t.title || '';
+    document.getElementById('ed-category').value = t.category || '';
+    document.getElementById('ed-icon').value = t.icon || '';
+    document.getElementById('ed-desc').value = t.description || '';
+    document.getElementById('ed-body').value = t.bodyMarkdown || '';
+    document.getElementById('ed-legal').value = t.legalNote || '';
+    renderFieldEditors(t.fields || []);
+    document.getElementById('ed-delete').style.display = index >= 0 ? '' : 'none';
+    editorModal.classList.remove('hidden');
+  }
+
+  function renderFieldEditors(fields) {
+    const wrap = document.getElementById('ed-fields');
+    wrap.innerHTML = '';
+    fields.forEach((f, i) => {
+      const row = document.createElement('div');
+      row.className = 'field-row bg-slate-50 p-2 rounded-lg';
+      row.innerHTML = `
+        <input type="text" placeholder="Variabelnamn" value="${escapeHtml(f.name || '')}" data-key="name"
+          class="rounded border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-teal-600" />
+        <input type="text" placeholder="Etikett" value="${escapeHtml(f.label || '')}" data-key="label"
+          class="rounded border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-teal-600" />
+        <select data-key="type" class="rounded border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-teal-600">
+          <option value="text" ${f.type==='text'?'selected':''}>Text</option>
+          <option value="textarea" ${f.type==='textarea'?'selected':''}>Textyta</option>
+          <option value="number" ${f.type==='number'?'selected':''}>Nummer</option>
+          <option value="date" ${f.type==='date'?'selected':''}>Datum</option>
+          <option value="select" ${f.type==='select'?'selected':''}>Val</option>
+        </select>
+        <button type="button" class="text-red-600 hover:text-red-800 text-lg px-2" data-remove="${i}">×</button>
+      `;
+      wrap.appendChild(row);
+    });
+    // Delete handlers
+    wrap.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.remove, 10);
+        const cur = collectFields();
+        cur.splice(idx, 1);
+        renderFieldEditors(cur);
+      });
+    });
+  }
+
+  function collectFields() {
+    const rows = document.getElementById('ed-fields').children;
+    const fields = [];
+    for (const row of rows) {
+      const inputs = row.querySelectorAll('[data-key]');
+      const f = {};
+      inputs.forEach(inp => {
+        f[inp.dataset.key] = inp.value.trim();
+      });
+      if (f.name) fields.push(f);
+    }
+    return fields;
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.getElementById('ed-add-field').addEventListener('click', () => {
+    const cur = collectFields();
+    cur.push({ name: '', label: '', type: 'text' });
+    renderFieldEditors(cur);
+  });
+
+  document.getElementById('editor-close').addEventListener('click', () => editorModal.classList.add('hidden'));
+  editorModal.addEventListener('click', (e) => { if (e.target === editorModal) editorModal.classList.add('hidden'); });
+
+  document.getElementById('editor-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const templates = window.getTemplates();
+    const t = {
+      id: editingIndex >= 0 ? templates[editingIndex].id : ('ny-' + Date.now()),
+      title: document.getElementById('ed-title').value.trim(),
+      category: document.getElementById('ed-category').value.trim(),
+      icon: document.getElementById('ed-icon').value.trim() || '📄',
+      description: document.getElementById('ed-desc').value.trim(),
+      fields: collectFields(),
+      bodyMarkdown: document.getElementById('ed-body').value,
+      legalNote: document.getElementById('ed-legal').value.trim()
+    };
+    if (editingIndex >= 0) templates[editingIndex] = t;
+    else templates.push(t);
+    window.saveTemplates(templates);
+    editorModal.classList.add('hidden');
+    renderTemplateList();
+  });
+
+  document.getElementById('ed-delete').addEventListener('click', () => {
+    if (editingIndex < 0) return;
+    if (!confirm('Radera mallen? Kan inte ångras.')) return;
+    const templates = window.getTemplates();
+    templates.splice(editingIndex, 1);
+    window.saveTemplates(templates);
+    editorModal.classList.add('hidden');
+    renderTemplateList();
+  });
+
+  // ============= TOP-BUTTONS =============
+  document.getElementById('btn-new-template').addEventListener('click', () => openEditor(-1));
+
+  document.getElementById('btn-export').addEventListener('click', () => {
+    const templates = window.getTemplates();
+    const blob = new Blob([JSON.stringify(templates, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pacted_mallar_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (!confirm('Återställ alla mallar till standardvärden? Egna ändringar försvinner.')) return;
+    window.resetTemplates();
+    renderTemplateList();
+  });
+
+  // ============= INIT =============
+  if (isLoggedIn()) {
+    showAdmin();
+  }
+  </script>
+</body>
+</html>
